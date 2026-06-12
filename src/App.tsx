@@ -1,14 +1,28 @@
+import { lazy, Suspense, type ReactNode } from 'react';
 import { BrowserRouter, Route, Routes } from 'react-router-dom';
 import ProtectedRoute from './components/auth/ProtectedRoute';
 import Layout from './components/layout/Layout';
 import Home from './pages/Home';
-import Products from './pages/Products';
-import ProductDetail from './pages/ProductDetail';
-import Cart from './pages/Cart';
-import Login from './pages/Login';
-import AdminDashboard from './pages/admin/AdminDashboard';
-import AdminProducts from './pages/admin/AdminProducts';
-import ProductForm from './pages/admin/ProductForm';
+
+const Products = lazy(() => import('./pages/Products'));
+const ProductDetail = lazy(() => import('./pages/ProductDetail'));
+const Cart = lazy(() => import('./pages/Cart'));
+const Login = lazy(() => import('./pages/Login'));
+const AdminDashboard = lazy(() => import('./pages/admin/AdminDashboard'));
+const AdminProducts = lazy(() => import('./pages/admin/AdminProducts'));
+const ProductForm = lazy(() => import('./pages/admin/ProductForm'));
+
+function RouteFallback() {
+  return (
+    <section className="flex min-h-[calc(100vh-76px)] items-center justify-center px-4 text-porcelain">
+      <div className="state-panel text-sm">Memuat halaman...</div>
+    </section>
+  );
+}
+
+function LazyRoute({ children }: { children: ReactNode }) {
+  return <Suspense fallback={<RouteFallback />}>{children}</Suspense>;
+}
 
 export default function App() {
   return (
@@ -26,7 +40,9 @@ export default function App() {
           path="/products"
           element={
             <Layout>
-              <Products />
+              <LazyRoute>
+                <Products />
+              </LazyRoute>
             </Layout>
           }
         />
@@ -34,7 +50,9 @@ export default function App() {
           path="/products/:slug"
           element={
             <Layout>
-              <ProductDetail />
+              <LazyRoute>
+                <ProductDetail />
+              </LazyRoute>
             </Layout>
           }
         />
@@ -42,17 +60,28 @@ export default function App() {
           path="/cart"
           element={
             <Layout>
-              <Cart />
+              <LazyRoute>
+                <Cart />
+              </LazyRoute>
             </Layout>
           }
         />
-        <Route path="/login" element={<Login />} />
+        <Route
+          path="/login"
+          element={
+            <LazyRoute>
+              <Login />
+            </LazyRoute>
+          }
+        />
         <Route
           path="/admin"
           element={
             <ProtectedRoute>
               <Layout>
-                <AdminDashboard />
+                <LazyRoute>
+                  <AdminDashboard />
+                </LazyRoute>
               </Layout>
             </ProtectedRoute>
           }
@@ -62,7 +91,9 @@ export default function App() {
           element={
             <ProtectedRoute>
               <Layout>
-                <AdminProducts />
+                <LazyRoute>
+                  <AdminProducts />
+                </LazyRoute>
               </Layout>
             </ProtectedRoute>
           }
@@ -72,7 +103,9 @@ export default function App() {
           element={
             <ProtectedRoute>
               <Layout>
-                <ProductForm />
+                <LazyRoute>
+                  <ProductForm />
+                </LazyRoute>
               </Layout>
             </ProtectedRoute>
           }
@@ -82,7 +115,9 @@ export default function App() {
           element={
             <ProtectedRoute>
               <Layout>
-                <ProductForm />
+                <LazyRoute>
+                  <ProductForm />
+                </LazyRoute>
               </Layout>
             </ProtectedRoute>
           }
