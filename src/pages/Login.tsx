@@ -1,10 +1,13 @@
-import { Navigate } from 'react-router-dom';
+import { Link, Navigate, useLocation } from 'react-router-dom';
 import { useState } from 'react';
 import { useAuth } from '../hooks/useAuth';
+import { isAdminUser } from '../lib/adminAccess';
 
 export default function Login() {
-  const { user, isLoading, loginWithGoogle } = useAuth();
+  const { user, isLoading, loginWithGoogle, logout } = useAuth();
+  const location = useLocation();
   const [errorMessage, setErrorMessage] = useState('');
+  const accessDeniedFromRoute = Boolean((location.state as { adminAccessDenied?: boolean } | null)?.adminAccessDenied);
 
   if (isLoading) {
     return (
@@ -14,9 +17,19 @@ export default function Login() {
     );
   }
 
-  if (user) {
+  if (user && isAdminUser(user)) {
     return <Navigate to="/admin" replace />;
   }
+
+  const handleLogout = async () => {
+    setErrorMessage('');
+
+    try {
+      await logout();
+    } catch (error) {
+      setErrorMessage(error instanceof Error ? error.message : 'Gagal logout.');
+    }
+  };
 
   const handleLogin = async () => {
     setErrorMessage('');
@@ -35,13 +48,39 @@ export default function Login() {
         <h1 className="mt-3 text-3xl font-semibold text-porcelain">Masuk ke Panel Admin</h1>
         <p className="mt-3 text-sm leading-6 text-mist">Login dengan Google untuk mengelola produk Adzani Store.</p>
 
-        <button
-          type="button"
-          onClick={handleLogin}
-          className="btn-primary mt-6 w-full"
-        >
-          Login dengan Google
-        </button>
+        {user && !isAdminUser(user) && (
+          <div className="error-panel mt-5 text-sm">
+            <p className="font-semibold">Akun ini tidak memiliki akses admin.</p>
+            {user.email && <p className="mt-2 break-all text-mist">{user.email}</p>}
+          </div>
+        )}
+
+        {!user && accessDeniedFromRoute && (
+          <div className="error-panel mt-5 text-sm">
+            Akun ini tidak memiliki akses admin.
+          </div>
+        )}
+
+        {!user && (
+          <button
+            type="button"
+            onClick={handleLogin}
+            className="btn-primary mt-6 w-full"
+          >
+            Login dengan Google
+          </button>
+        )}
+
+        {user && !isAdminUser(user) && (
+          <div className="mt-6 grid gap-3 sm:grid-cols-2">
+            <Link to="/" className="btn-secondary text-center">
+              Kembali ke Home
+            </Link>
+            <button type="button" onClick={handleLogout} className="btn-danger">
+              Logout
+            </button>
+          </div>
+        )}
 
         {errorMessage && <p className="error-panel mt-4 text-sm">{errorMessage}</p>}
       </div>
