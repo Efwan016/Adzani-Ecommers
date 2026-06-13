@@ -1,0 +1,41 @@
+<svg width="1200" height="630" viewBox="0 0 1200 630" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <rect width="1200" height="630" fill="#0f1513"/>
+  <rect x="54" y="54" width="1092" height="522" rx="34" fill="#17211d" stroke="#26352f" stroke-width="2"/>
+  <path d="M80 500C198 438 275 466 392 415C516 361 576 248 721 264C860 279 907 389 1120 322V576H80V500Z" fill="#a6d8c2" fill-opacity="0.08"/>
+  <path d="M78 134H1122" stroke="#26352f" stroke-width="2"/>
+  <circle cx="102" cy="94" r="10" fill="#e2c482"/>
+  <circle cx="134" cy="94" r="10" fill="#a6d8c2"/>
+  <circle cx="166" cy="94" r="10" fill="#d98f8f"/>
+
+  <g transform="translate(86 174)">
+    <rect width="166" height="166" rx="28" fill="#0f1513" stroke="#a6d8c2" stroke-width="4"/>
+    <path d="M44 116L72 48H86L114 116H98L92 100H66L60 116H44ZM70 87H88L79 62L70 87Z" fill="#a6d8c2"/>
+    <path d="M43 132H123" stroke="#e2c482" stroke-width="8" stroke-linecap="round"/>
+    <circle cx="126" cy="42" r="12" fill="#e2c482"/>
+  </g>
+
+  <g transform="translate(884 164)">
+    <rect x="42" y="0" width="142" height="232" rx="22" fill="#0f1513" stroke="#3b4b44" stroke-width="4"/>
+    <rect x="58" y="24" width="110" height="168" rx="14" fill="#1f2c27"/>
+    <path d="M78 58H148" stroke="#a6d8c2" stroke-width="8" stroke-linecap="round"/>
+    <path d="M78 88H132" stroke="#e2c482" stroke-width="8" stroke-linecap="round"/>
+    <path d="M78 118H150" stroke="#65756e" stroke-width="8" stroke-linecap="round"/>
+    <circle cx="113" cy="210" r="8" fill="#a6d8c2"/>
+    <rect x="0" y="126" width="82" height="56" rx="14" fill="#26352f" stroke="#a6d8c2" stroke-width="3"/>
+    <path d="M18 154H64" stroke="#e2c482" stroke-width="6" stroke-linecap="round"/>
+    <rect x="154" y="90" width="94" height="70" rx="16" fill="#26352f" stroke="#e2c482" stroke-width="3"/>
+    <path d="M176 114H226" stroke="#a6d8c2" stroke-width="6" stroke-linecap="round"/>
+    <path d="M176 136H212" stroke="#65756e" stroke-width="6" stroke-linecap="round"/>
+  </g>
+
+  <text x="300" y="278" fill="#f4f1e8" font-family="Inter, Arial, sans-serif" font-size="86" font-weight="800" letter-spacing="0">Adzani Store</text>
+  <text x="304" y="350" fill="#a6d8c2" font-family="Inter, Arial, sans-serif" font-size="34" font-weight="700" letter-spacing="0">Elektronik, Aksesoris HP &amp; Voucher</text>
+  <text x="306" y="414" fill="#c8d0ca" font-family="Inter, Arial, sans-serif" font-size="25" font-weight="500" letter-spacing="0">Katalog produk, cart belanja, dan checkout cepat via WhatsApp.</text>
+
+  <g transform="translate(304 462)">
+    <rect width="172" height="46" rx="12" fill="#a6d8c2"/>
+    <text x="25" y="30" fill="#0f1513" font-family="Inter, Arial, sans-serif" font-size="18" font-weight="800" letter-spacing="0">Katalog Aktif</text>
+    <rect x="190" width="168" height="46" rx="12" fill="#26352f" stroke="#3b4b44"/>
+    <text x="216" y="30" fill="#e2c482" font-family="Inter, Arial, sans-serif" font-size="18" font-weight="800" letter-spacing="0">Checkout WA</text>
+  </g>
+</svg>
