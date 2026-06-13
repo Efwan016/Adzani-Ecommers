@@ -38,7 +38,22 @@ EXECUTE FUNCTION public.set_updated_at();
 -- 3) Aktifkan RLS
 ALTER TABLE public.products ENABLE ROW LEVEL SECURITY;
 
--- 4) Policy: public read only untuk produk aktif
+-- 4) Admin helper
+-- Ganti admin@example.com dengan email admin yang sama seperti VITE_ADMIN_EMAILS
+-- sebelum menjalankan SQL ini di Supabase production.
+CREATE OR REPLACE FUNCTION public.is_admin()
+RETURNS boolean
+LANGUAGE sql
+STABLE
+AS $$
+  SELECT lower(coalesce(auth.jwt() ->> 'email', '')) = any (
+    ARRAY[
+      'admin@example.com'
+    ]::text[]
+  );
+$$;
+
+-- 5) Policy: public read only untuk produk aktif
 DROP POLICY IF EXISTS "products_select_public_active" ON public.products;
 CREATE POLICY "products_select_public_active"
   ON public.products
@@ -51,32 +66,35 @@ CREATE POLICY "products_select_authenticated_all"
   ON public.products
   FOR SELECT
   TO authenticated
-  USING (true);
+  USING (public.is_admin());
 
--- 5) Policy: authenticated user bisa insert / update / delete (MVP)
+-- 6) Policy: hanya authenticated admin yang bisa insert / update / delete
 DROP POLICY IF EXISTS "products_insert_authenticated" ON public.products;
-CREATE POLICY "products_insert_authenticated"
+DROP POLICY IF EXISTS "products_insert_admin" ON public.products;
+CREATE POLICY "products_insert_admin"
   ON public.products
   FOR INSERT
   TO authenticated
-  WITH CHECK (true);
+  WITH CHECK (public.is_admin());
 
 DROP POLICY IF EXISTS "products_update_authenticated" ON public.products;
-CREATE POLICY "products_update_authenticated"
+DROP POLICY IF EXISTS "products_update_admin" ON public.products;
+CREATE POLICY "products_update_admin"
   ON public.products
   FOR UPDATE
   TO authenticated
-  USING (true)
-  WITH CHECK (true);
+  USING (public.is_admin())
+  WITH CHECK (public.is_admin());
 
 DROP POLICY IF EXISTS "products_delete_authenticated" ON public.products;
-CREATE POLICY "products_delete_authenticated"
+DROP POLICY IF EXISTS "products_delete_admin" ON public.products;
+CREATE POLICY "products_delete_admin"
   ON public.products
   FOR DELETE
   TO authenticated
-  USING (true);
+  USING (public.is_admin());
 
--- 6) Sample data: 5 produk konter / aksesoris HP
+-- 7) Sample data: 5 produk konter / aksesoris HP
 INSERT INTO public.products (name, slug, description, category, price, cost_price, stock, image_url, is_active)
 VALUES
   (
