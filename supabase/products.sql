@@ -46,6 +46,13 @@ CREATE POLICY "products_select_public_active"
   TO public
   USING (is_active = true);
 
+DROP POLICY IF EXISTS "products_select_authenticated_all" ON public.products;
+CREATE POLICY "products_select_authenticated_all"
+  ON public.products
+  FOR SELECT
+  TO authenticated
+  USING (true);
+
 -- 5) Policy: authenticated user bisa insert / update / delete (MVP)
 DROP POLICY IF EXISTS "products_insert_authenticated" ON public.products;
 CREATE POLICY "products_insert_authenticated"
