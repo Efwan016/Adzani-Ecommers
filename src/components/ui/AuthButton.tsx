@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
 import type { Session } from '@supabase/supabase-js';
+import { isAdminUser } from '../../lib/adminAccess';
 import { supabase } from '../../services/supabaseClient';
 
 export default function AuthButton() {
@@ -65,7 +66,9 @@ export default function AuthButton() {
 
   return session ? (
     <div className="flex items-center gap-2">
-      <span className="hidden rounded-md border border-sage/30 bg-sage/10 px-3 py-2 text-xs text-sage md:block">Admin aktif</span>
+      <span className="hidden rounded-md border border-sage/30 bg-sage/10 px-3 py-2 text-xs text-sage md:block">
+        {isAdminUser(session.user) ? 'Admin aktif' : 'Login aktif'}
+      </span>
       <button
         type="button"
         onClick={handleSignOut}
