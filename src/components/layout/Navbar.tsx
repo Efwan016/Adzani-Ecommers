@@ -1,9 +1,13 @@
 import { Link } from 'react-router-dom';
 import { useCart } from '../../hooks/useCart';
+import { useAuth } from '../../hooks/useAuth';
+import { isAdminUser } from '../../lib/adminAccess';
 import AuthButton from '../ui/AuthButton';
 
 export default function Navbar() {
   const { getTotalItems } = useCart();
+  const { user, isLoading } = useAuth();
+  const canOpenAdmin = !isLoading && isAdminUser(user);
 
   return (
     <header className="sticky top-0 z-20 border-b border-white/10 bg-ink/82 backdrop-blur-xl">
@@ -21,7 +25,9 @@ export default function Navbar() {
         <nav className="order-3 flex w-full items-center gap-2 overflow-x-auto text-sm text-mist sm:order-none sm:w-auto md:gap-3">
           <Link to="/" className="rounded-md px-3 py-2 hover:bg-white/7 hover:text-porcelain">Home</Link>
           <Link to="/products" className="rounded-md px-3 py-2 hover:bg-white/7 hover:text-porcelain">Produk</Link>
-          <Link to="/admin" className="rounded-md px-3 py-2 hover:bg-white/7 hover:text-porcelain">Admin</Link>
+          {canOpenAdmin && (
+            <Link to="/admin" className="rounded-md px-3 py-2 hover:bg-white/7 hover:text-porcelain">Admin</Link>
+          )}
         </nav>
 
         <div className="flex items-center gap-2">
