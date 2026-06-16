@@ -90,7 +90,7 @@ function ProductSkeletonGrid() {
 }
 
 export default function Products() {
-  const { products, isLoading, error } = useProducts();
+  const { products, isLoading, error, loadProducts } = useProducts();
   const { items, addToCart } = useCart();
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedCategory, setSelectedCategory] = useState('Semua');
@@ -194,7 +194,20 @@ export default function Products() {
       {isLoading && <ProductSkeletonGrid />}
 
       {error && (
-        <div className="error-panel">{error}</div>
+        <div className="error-panel mb-6 p-5">
+          <p className="text-lg font-semibold text-porcelain">Katalog belum bisa dimuat.</p>
+          <p className="mt-2 text-sm leading-6 text-blush">
+            {error}
+          </p>
+          <div className="mt-5 flex flex-col gap-3 sm:flex-row">
+            <button type="button" onClick={loadProducts} className="btn-primary">
+              Coba Lagi
+            </button>
+            <Link to="/" className="btn-secondary text-center">
+              Kembali ke Home
+            </Link>
+          </div>
+        </div>
       )}
 
       {!isLoading && !error && (
@@ -260,6 +273,9 @@ export default function Products() {
         <div className="state-panel border-dashed p-10 text-center">
           <p className="text-lg font-semibold text-porcelain">Belum ada produk aktif.</p>
           <p className="mt-2 text-sm text-smoke">Produk yang aktif dari admin akan tampil di sini.</p>
+          <button type="button" onClick={loadProducts} className="btn-secondary mt-5">
+            Muat Ulang Katalog
+          </button>
         </div>
       )}
 

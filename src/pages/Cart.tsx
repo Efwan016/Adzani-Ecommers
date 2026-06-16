@@ -2,7 +2,7 @@ import { useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { formatCurrency } from '../lib/formatCurrency';
 import { useCart } from '../hooks/useCart';
-import { getWhatsAppCheckoutUrl } from '../services/whatsappService';
+import { generateWhatsAppOrderMessage, getWhatsAppCheckoutUrl, type CheckoutInfo, type PickupMethod } from '../services/whatsappService';
 
 function getProductInitials(name: string) {
   return name
@@ -32,6 +32,11 @@ export default function Cart() {
   const { items, removeFromCart, updateQty, clearCart, getSubtotal } = useCart();
   const [errorMessage, setErrorMessage] = useState('');
   const [checkoutMessage, setCheckoutMessage] = useState('');
+  const [checkoutInfo, setCheckoutInfo] = useState<CheckoutInfo>({
+    customerName: '',
+    orderNote: '',
+    pickupMethod: '',
+  });
   const [brokenImageIds, setBrokenImageIds] = useState<Set<string>>(() => new Set());
 
   const totalQty = items.reduce((sum, item) => sum + item.qty, 0);
@@ -40,6 +45,7 @@ export default function Cart() {
     return items.filter((item) => item.product.stock <= 0 || item.qty > item.product.stock);
   }, [items]);
   const isCartInvalid = invalidItems.length > 0;
+  const whatsappPreview = items.length > 0 ? generateWhatsAppOrderMessage(items, checkoutInfo) : '';
 
   const markImageAsBroken = (productId: string) => {
     setBrokenImageIds((current) => {
@@ -67,12 +73,12 @@ export default function Cart() {
     }
 
     try {
-      setCheckoutMessage('WhatsApp akan terbuka di tab baru. Keranjang tetap disimpan sampai kamu kosongkan sendiri.');
-      const url = getWhatsAppCheckoutUrl(items);
+      setCheckoutMessage('WhatsApp will be open new tab, chart stay save after your delete');
+      const url = getWhatsAppCheckoutUrl(items, checkoutInfo);
       window.open(url, '_blank', 'noopener,noreferrer');
     } catch (error) {
       setCheckoutMessage('');
-      setErrorMessage(error instanceof Error ? error.message : 'Gagal membuka WhatsApp checkout.');
+      setErrorMessage(error instanceof Error ? error.message : 'WhatsApp Failed Open');
     }
   };
 
@@ -123,7 +129,8 @@ export default function Cart() {
           <div className="space-y-4">
             {isCartInvalid && (
               <div className="rounded-md border border-blush/30 bg-blush/10 p-4 text-sm leading-6 text-blush">
-                Ada item dengan stok habis atau jumlah melebihi stok. Sesuaikan jumlah atau hapus item sebelum checkout.
+                <p className="font-semibold text-porcelain">Keranjang perlu disesuaikan.</p>
+                <p className="mt-1">Ada item dengan stok habis atau jumlah melebihi stok. Sesuaikan jumlah atau hapus item sebelum checkout.</p>
               </div>
             )}
 
@@ -256,9 +263,61 @@ export default function Cart() {
               </ul>
             </div>
 
+            <div className="mt-5 space-y-4 rounded-md border border-white/10 bg-white/5 p-4">
+              <div>
+                <p className="text-xs font-semibold uppercase tracking-[0.16em] text-smoke">Info tambahan</p>
+                <p className="mt-2 text-sm leading-6 text-mist">
+                  Opsional, tapi membantu admin memproses order lebih cepat.
+                </p>
+              </div>
+
+              <label className="field-label">
+                <span>Nama customer</span>
+                <input
+                  type="text"
+                  value={checkoutInfo.customerName ?? ''}
+                  onChange={(event) => setCheckoutInfo((current) => ({ ...current, customerName: event.target.value }))}
+                  className="field-control"
+                  placeholder="Nama kamu"
+                />
+              </label>
+
+              <label className="field-label">
+                <span>Metode ambil</span>
+                <select
+                  value={checkoutInfo.pickupMethod ?? ''}
+                  onChange={(event) => setCheckoutInfo((current) => ({ ...current, pickupMethod: event.target.value as PickupMethod }))}
+                  className="field-control"
+                >
+                  <option value="">Pilih jika perlu</option>
+                  <option value="Ambil di toko">Ambil di toko</option>
+                  <option value="Tanya admin dulu">Tanya admin dulu</option>
+                </select>
+              </label>
+
+              <label className="field-label">
+                <span>Catatan pesanan</span>
+                <textarea
+                  value={checkoutInfo.orderNote ?? ''}
+                  onChange={(event) => setCheckoutInfo((current) => ({ ...current, orderNote: event.target.value }))}
+                  rows={4}
+                  className="field-control resize-y"
+                  placeholder="Contoh: warna hitam kalau ada, konfirmasi stok dulu ya"
+                />
+              </label>
+            </div>
+
+            <div className="mt-5 rounded-md border border-white/10 bg-ink/70 p-4">
+              <p className="text-xs font-semibold uppercase tracking-[0.16em] text-smoke">Pesan yang akan dikirim</p>
+              <pre className="mt-3 max-h-72 overflow-auto whitespace-pre-wrap rounded-md bg-white/5 p-3 text-xs leading-6 text-mist">
+                {whatsappPreview}
+              </pre>
+            </div>
+
             {isCartInvalid && (
               <div className="mt-4 rounded-md border border-blush/30 bg-blush/10 p-4 text-sm leading-6 text-blush">
-                Checkout dinonaktifkan sampai semua item sesuai stok.
+                <p className="font-semibold text-porcelain">Checkout dinonaktifkan.</p>
+                <p className="mt-1">Perbaiki item bertanda stok bermasalah agar WhatsApp checkout bisa digunakan.</p>
               </div>
             )}
 
@@ -276,7 +335,7 @@ export default function Cart() {
               disabled={items.length === 0 || isCartInvalid}
               className="btn-primary mt-5 w-full py-4 text-base disabled:cursor-not-allowed disabled:opacity-50"
             >
-              Checkout via WhatsApp
+              {isCartInvalid ? 'Perbaiki Keranjang Dulu' : 'Checkout via WhatsApp'}
             </button>
 
             <button

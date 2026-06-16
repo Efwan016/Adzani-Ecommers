@@ -21,33 +21,33 @@ export default function HeroSection() {
           </h1>
 
           <p className="mt-5 max-w-xl text-base leading-8 text-mist sm:text-lg">
-            Jelajahi katalog produk, masukkan item ke cart, lalu checkout cepat ke WhatsApp admin dengan format order otomatis.
+            Belanja elektronik, aksesoris HP, dan voucher lebih praktis. Pilih produk dari katalog, cek stok, lalu checkout ke WhatsApp admin.
           </p>
 
           <div className="mt-8 flex flex-wrap gap-3">
             <Link to="/products" className="btn-primary">
-              Lihat Produk
+              Belanja Sekarang
             </Link>
 
-            <Link to="#features" className="btn-secondary">
-              Alur Belanja
+            <Link to="/cart" className="btn-secondary">
+              Lihat Cart
             </Link>
           </div>
 
           <div className="mt-8 grid max-w-xl grid-cols-2 gap-3 text-sm text-mist sm:grid-cols-3">
             <div className="surface-muted px-3 py-3">
-              <p className="font-semibold text-porcelain">Katalog aktif</p>
-              <p className="mt-1 text-xs text-smoke">Pilihan produk yang siap dipesan</p>
+              <p className="font-semibold text-porcelain">Katalog online</p>
+              <p className="mt-1 text-xs text-smoke">Produk aktif siap dipilih</p>
             </div>
 
             <div className="surface-muted px-3 py-3">
-              <p className="font-semibold text-porcelain">Keranjang cepat</p>
-              <p className="mt-1 text-xs text-smoke">Tambah produk tanpa login</p>
+              <p className="font-semibold text-porcelain">Checkout WhatsApp</p>
+              <p className="mt-1 text-xs text-smoke">Order terkirim rapi ke admin</p>
             </div>
 
             <div className="surface-muted px-3 py-3">
-              <p className="font-semibold text-porcelain">Checkout WA</p>
-              <p className="mt-1 text-xs text-smoke">Order langsung ke admin</p>
+              <p className="font-semibold text-porcelain">Stok jelas</p>
+              <p className="mt-1 text-xs text-smoke">Qty dibatasi sesuai stok</p>
             </div>
           </div>
         </div>

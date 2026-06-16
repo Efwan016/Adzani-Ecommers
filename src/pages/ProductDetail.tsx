@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import { Link, useParams } from 'react-router-dom';
 import { useCart } from '../hooks/useCart';
 import { getProductBySlug } from '../services/productService';
@@ -93,26 +93,27 @@ export default function ProductDetail() {
   const [qty, setQty] = useState(1);
   const [imageBroken, setImageBroken] = useState(false);
 
-  useEffect(() => {
-    const loadProduct = async () => {
-      setIsLoading(true);
-      setError(null);
-      setCartFeedback('');
-      setQty(1);
-      setImageBroken(false);
+  const loadProduct = useCallback(async () => {
+    setIsLoading(true);
+    setError(null);
+    setCartFeedback('');
+    setQty(1);
+    setImageBroken(false);
 
-      try {
-        const data = await getProductBySlug(slug ?? '');
-        setProduct(data);
-      } catch (err) {
-        setError(err instanceof Error ? err.message : 'Gagal memuat produk');
-      } finally {
-        setIsLoading(false);
-      }
-    };
-
-    loadProduct();
+    try {
+      const data = await getProductBySlug(slug ?? '');
+      setProduct(data);
+    } catch (err) {
+      setProduct(null);
+      setError(err instanceof Error ? err.message : 'Gagal memuat produk');
+    } finally {
+      setIsLoading(false);
+    }
   }, [slug]);
+
+  useEffect(() => {
+    loadProduct();
+  }, [loadProduct]);
 
   const cartQty = useMemo(() => {
     if (!product) return 0;
@@ -145,7 +146,20 @@ export default function ProductDetail() {
     <section className="page-shell">
       {isLoading && <ProductDetailSkeleton />}
 
-      {error && <div className="error-panel">{error}</div>}
+      {error && (
+        <div className="error-panel mx-auto max-w-2xl p-6 text-center">
+          <p className="text-xl font-semibold text-porcelain">Detail produk belum bisa dimuat.</p>
+          <p className="mt-3 text-sm leading-6 text-blush">{error}</p>
+          <div className="mt-6 flex flex-col justify-center gap-3 sm:flex-row">
+            <button type="button" onClick={loadProduct} className="btn-primary">
+              Coba Lagi
+            </button>
+            <Link to="/products" className="btn-secondary">
+              Kembali ke Katalog
+            </Link>
+          </div>
+        </div>
+      )}
 
       {!isLoading && !error && !product && (
         <div className="state-panel mx-auto max-w-2xl border-dashed p-8 text-center sm:p-10">

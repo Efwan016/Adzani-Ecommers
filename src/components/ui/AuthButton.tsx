@@ -3,7 +3,13 @@ import type { Session } from '@supabase/supabase-js';
 import { isAdminUser } from '../../lib/adminAccess';
 import { supabase } from '../../services/supabaseClient';
 
-export default function AuthButton() {
+type AuthButtonProps = {
+  fullWidth?: boolean;
+  onActionComplete?: () => void;
+  showStatus?: boolean;
+};
+
+export default function AuthButton({ fullWidth = false, onActionComplete, showStatus = true }: AuthButtonProps) {
   const [session, setSession] = useState<Session | null>(null);
   const [loading, setLoading] = useState(true);
 
@@ -48,31 +54,39 @@ export default function AuthButton() {
       options: { redirectTo: `${window.location.origin}/` },
     });
 
-    if (error) console.error('Google login failed:', error.message);
+    if (error) {
+      console.error('Google login failed:', error.message);
+      return;
+    }
+
+    onActionComplete?.();
   };
 
   const handleSignOut = async () => {
     if (!supabase) return;
     await supabase.auth.signOut();
+    onActionComplete?.();
   };
 
   if (loading) {
-    return <span className="rounded-md border border-white/10 bg-white/6 px-3 py-2 text-xs text-smoke">Loading...</span>;
+    return <span className={`rounded-md border border-white/10 bg-white/6 px-3 py-2 text-xs text-smoke ${fullWidth ? 'block w-full text-center' : ''}`}>Loading...</span>;
   }
 
   if (!supabase) {
-    return <span className="rounded-md border border-champagne/30 bg-champagne/10 px-3 py-2 text-xs text-champagne">Set .env</span>;
+    return <span className={`rounded-md border border-champagne/30 bg-champagne/10 px-3 py-2 text-xs text-champagne ${fullWidth ? 'block w-full text-center' : ''}`}>Set .env</span>;
   }
 
   return session ? (
-    <div className="flex items-center gap-2">
-      <span className="hidden rounded-md border border-sage/30 bg-sage/10 px-3 py-2 text-xs text-sage md:block">
+    <div className={`flex items-center gap-2 ${fullWidth ? 'w-full flex-col items-stretch' : ''}`}>
+      {showStatus && (
+      <span className={`rounded-md border border-sage/30 bg-sage/10 px-3 py-2 text-xs text-sage ${fullWidth ? 'block text-center' : 'hidden md:block'}`}>
         {isAdminUser(session.user) ? 'Admin aktif' : 'Login aktif'}
       </span>
+      )}
       <button
         type="button"
         onClick={handleSignOut}
-        className="rounded-md border border-white/10 bg-white/7 px-3 py-2 text-sm font-semibold text-porcelain hover:bg-white/12"
+        className={`rounded-md border border-white/10 bg-white/7 px-3 py-2 text-sm font-semibold text-porcelain hover:bg-white/12 ${fullWidth ? 'w-full' : ''}`}
       >
         Logout
       </button>
@@ -81,7 +95,7 @@ export default function AuthButton() {
     <button
       type="button"
       onClick={handleGoogleLogin}
-      className="rounded-md bg-sage px-3 py-2 text-sm font-bold text-ink hover:bg-[#b7e3d0]"
+      className={`rounded-md bg-sage px-3 py-2 text-sm font-bold text-ink hover:bg-[#b7e3d0] ${fullWidth ? 'w-full' : ''}`}
     >
       Login
     </button>

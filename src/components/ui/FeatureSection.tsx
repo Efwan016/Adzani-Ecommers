@@ -2,16 +2,20 @@ import { Link } from 'react-router-dom'
 
 const highlights = [
   {
-    title: 'Cari produk',
-    copy: 'Customer bisa filter kategori dan cari barang yang dibutuhkan.',
+    title: 'Pilih produk',
+    copy: 'Cari barang dari katalog aktif, filter kategori, dan buka detail produk.',
   },
   {
-    title: 'Masuk keranjang',
-    copy: 'Jumlah item dijaga sesuai stok agar order tetap realistis.',
+    title: 'Masukkan cart',
+    copy: 'Tambahkan produk dan atur qty dengan batas sesuai stok toko.',
   },
   {
-    title: 'Konfirmasi admin',
-    copy: 'Checkout membuka WhatsApp dengan detail order yang sudah rapi.',
+    title: 'Checkout WhatsApp',
+    copy: 'Kirim format order otomatis ke WhatsApp admin dari halaman cart.',
+  },
+  {
+    title: 'Admin konfirmasi',
+    copy: 'Admin memastikan stok, harga akhir, dan kelanjutan transaksi.',
   },
 ]
 
@@ -22,12 +26,10 @@ export default function FeatureSection() {
         <div>
           <p className="eyebrow">Alur belanja</p>
 
-          <h2 className="section-title mt-3">
-            Dari katalog ke WhatsApp tanpa langkah yang berlebihan.
-          </h2>
+          <h2 className="section-title mt-3">Alur belanja singkat dan jelas.</h2>
 
           <p className="mt-4 max-w-xl text-sm leading-7 text-mist">
-            Customer memilih produk, memasukkannya ke keranjang, lalu checkout ke WhatsApp admin dengan format order otomatis.
+            Dari halaman utama, customer bisa langsung menuju katalog, simpan item ke cart, lalu menyelesaikan order lewat WhatsApp.
           </p>
 
           <div className="mt-6 flex flex-wrap gap-3">
@@ -41,9 +43,10 @@ export default function FeatureSection() {
           </div>
         </div>
 
-        <div className="grid gap-4 md:grid-cols-3">
-          {highlights.map((item) => (
+        <div className="grid gap-4 sm:grid-cols-2">
+          {highlights.map((item, index) => (
             <article key={item.title} className="surface-card p-5">
+              <p className="text-xs font-semibold uppercase tracking-[0.16em] text-sage">0{index + 1}</p>
               <h3 className="text-lg font-semibold text-porcelain">{item.title}</h3>
               <p className="mt-3 text-sm leading-6 text-mist">{item.copy}</p>
             </article>

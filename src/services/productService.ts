@@ -33,6 +33,25 @@ export async function getActiveProducts(): Promise<Product[]> {
   return (data ?? []) as Product[];
 }
 
+export async function getFeaturedActiveProducts(limit = 3): Promise<Product[]> {
+  if (!supabase) {
+    return [];
+  }
+
+  const { data, error } = await supabase
+    .from('products')
+    .select('*')
+    .eq('is_active', true)
+    .order('created_at', { ascending: false })
+    .limit(limit);
+
+  if (error) {
+    throw new Error(error.message);
+  }
+
+  return (data ?? []) as Product[];
+}
+
 export async function getProductBySlug(slug: string): Promise<Product | null> {
   if (!supabase) {
     return null;

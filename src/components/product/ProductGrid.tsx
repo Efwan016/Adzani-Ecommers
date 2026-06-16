@@ -2,8 +2,8 @@ import { Link } from 'react-router-dom';
 
 const categories = [
   {
-    title: 'Smartphone',
-    copy: 'Unit pilihan untuk kebutuhan harian, kerja, dan hiburan.',
+    title: 'Elektronik',
+    copy: 'Perangkat pilihan untuk kebutuhan harian, kerja, dan hiburan.',
     href: '/products',
   },
   {
@@ -29,12 +29,12 @@ export default function ProductGrid() {
       <div className="flex flex-col gap-4 md:flex-row md:items-end md:justify-between">
         <div>
           <p className="eyebrow">Pilihan katalog</p>
-          <h2 className="section-title mt-3">Kategori produk Adzani</h2>
+          <h2 className="section-title mt-3">Kategori yang paling sering dicari.</h2>
         </div>
 
         <div className="max-w-xl">
           <p className="text-sm leading-7 text-mist">
-            Section ini hanya shortcut kategori. Produk asli tampil di halaman katalog dari data Supabase yang aktif.
+            Langsung masuk ke katalog untuk melihat produk aktif, stok tersedia, dan harga sebelum checkout.
           </p>
 
           <Link to="/products" className="mt-4 inline-flex text-sm font-semibold text-sage hover:text-porcelain">
@@ -63,7 +63,7 @@ export default function ProductGrid() {
             </p>
 
             <p className="mt-5 text-sm font-semibold text-sage">
-              Lihat katalog
+              Buka katalog
             </p>
           </Link>
         ))}

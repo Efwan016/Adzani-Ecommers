@@ -56,7 +56,9 @@ export default function ProductForm() {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isUploadingImage, setIsUploadingImage] = useState(false);
   const [imageUploadError, setImageUploadError] = useState('');
+  const [imageUploadSuccess, setImageUploadSuccess] = useState('');
   const [errorMessage, setErrorMessage] = useState('');
+  const [successMessage, setSuccessMessage] = useState('');
 
   const slugPreview = useMemo(() => slugify(form.name), [form.name]);
   const imagePreviewUrl = form.image_url.trim();
@@ -73,7 +75,9 @@ export default function ProductForm() {
       setHasLoadedEditProduct(true);
       setIsSlugManuallyEdited(false);
       setImageUploadError('');
+      setImageUploadSuccess('');
       setErrorMessage('');
+      setSuccessMessage('');
       return;
     }
 
@@ -85,7 +89,9 @@ export default function ProductForm() {
       setHasLoadedEditProduct(false);
       setIsSlugManuallyEdited(true);
       setImageUploadError('');
+      setImageUploadSuccess('');
       setErrorMessage('');
+      setSuccessMessage('');
 
       try {
         const product = await getProductById(id);
@@ -144,6 +150,7 @@ export default function ProductForm() {
     }
 
     setImageUploadError('');
+    setImageUploadSuccess('');
 
     if (!file.type.startsWith('image/')) {
       setImageUploadError('File harus berupa gambar.');
@@ -162,6 +169,7 @@ export default function ProductForm() {
     try {
       const publicUrl = await uploadProductImage(file, form.slug.trim() || slugPreview);
       handleChange('image_url', publicUrl);
+      setImageUploadSuccess('Gambar produk berhasil diupload dan URL sudah masuk ke form.');
     } catch (error) {
       setImageUploadError(error instanceof Error ? error.message : 'Gagal upload gambar produk.');
     } finally {
@@ -173,6 +181,7 @@ export default function ProductForm() {
   const handleSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
     setErrorMessage('');
+    setSuccessMessage('');
 
     const price = Number(form.price);
     const costPrice = form.cost_price === '' ? null : Number(form.cost_price);
@@ -229,7 +238,10 @@ export default function ProductForm() {
         await createProduct(input);
       }
 
-      navigate('/admin/products');
+      const message = isEditMode ? 'Produk berhasil diperbarui.' : 'Produk baru berhasil dibuat.';
+      setSuccessMessage(`${message} Mengarahkan ke daftar produk...`);
+      await new Promise((resolve) => setTimeout(resolve, 700));
+      navigate('/admin/products', { state: { feedback: message } });
     } catch (error) {
       setErrorMessage(error instanceof Error ? error.message : 'Gagal menyimpan produk.');
     } finally {
@@ -255,7 +267,15 @@ export default function ProductForm() {
 
       {isLoading && <div className="state-panel">Memuat produk...</div>}
 
-      {hasEditLoadError && <div className="error-panel">{errorMessage}</div>}
+      {hasEditLoadError && (
+        <div className="error-panel p-5">
+          <p className="text-lg font-semibold text-porcelain">Produk edit belum bisa dimuat.</p>
+          <p className="mt-2 text-sm">{errorMessage}</p>
+          <Link to="/admin/products" className="btn-secondary mt-5">
+            Kembali ke Manajemen Produk
+          </Link>
+        </div>
+      )}
 
       {!isLoading && !hasEditLoadError && (
         <form onSubmit={handleSubmit} className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_390px]">
@@ -372,6 +392,12 @@ export default function ProductForm() {
               {imageUploadError && (
                 <p className="error-panel mt-3 text-sm">{imageUploadError}</p>
               )}
+
+              {imageUploadSuccess && !imageUploadError && (
+                <p className="mt-3 rounded-md border border-sage/30 bg-sage/10 px-3 py-2 text-sm font-semibold text-sage">
+                  {imageUploadSuccess}
+                </p>
+              )}
             </div>
 
             <div className="surface-card p-5">
@@ -426,6 +452,7 @@ export default function ProductForm() {
                   value={form.image_url}
                   onChange={(event) => {
                     setImageUploadError('');
+                    setImageUploadSuccess('');
                     handleChange('image_url', event.target.value);
                   }}
                   className="field-control"
@@ -465,6 +492,11 @@ export default function ProductForm() {
 
           <div className="surface-card p-4 lg:col-span-2">
             {errorMessage && <p className="error-panel mb-4 text-sm">{errorMessage}</p>}
+            {successMessage && (
+              <p className="mb-4 rounded-md border border-sage/30 bg-sage/10 p-4 text-sm font-semibold text-sage">
+                {successMessage}
+              </p>
+            )}
 
             <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
               <p className="text-sm leading-6 text-mist">

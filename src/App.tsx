@@ -15,7 +15,7 @@ const ProductForm = lazy(() => import('./pages/admin/ProductForm'));
 function RouteFallback() {
   return (
     <section className="flex min-h-[calc(100vh-76px)] items-center justify-center px-4 text-porcelain">
-      <div className="state-panel text-sm">Memuat halaman...</div>
+      <div className="state-panel text-sm">Please wait...</div>
     </section>
   );
 }

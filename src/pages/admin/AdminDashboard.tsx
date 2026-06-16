@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { useAuth } from '../../hooks/useAuth';
 import { getAllProductsForAdmin } from '../../services/productService';
@@ -48,36 +48,23 @@ export default function AdminDashboard() {
     { label: 'Stok habis', value: outOfStockProducts, tone: 'text-blush' },
   ];
 
-  useEffect(() => {
-    let isMounted = true;
+  const loadProducts = useCallback(async () => {
+    setIsLoading(true);
+    setError(null);
 
-    const loadProducts = async () => {
-      setIsLoading(true);
-      setError(null);
-
-      try {
-        const data = await getAllProductsForAdmin();
-
-        if (isMounted) {
-          setProducts(data);
-        }
-      } catch (err) {
-        if (isMounted) {
-          setError(err instanceof Error ? err.message : 'Gagal memuat ringkasan produk');
-        }
-      } finally {
-        if (isMounted) {
-          setIsLoading(false);
-        }
-      }
-    };
-
-    loadProducts();
-
-    return () => {
-      isMounted = false;
-    };
+    try {
+      const data = await getAllProductsForAdmin();
+      setProducts(data);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Gagal memuat ringkasan produk');
+    } finally {
+      setIsLoading(false);
+    }
   }, []);
+
+  useEffect(() => {
+    loadProducts();
+  }, [loadProducts]);
 
   const handleLogout = async () => {
     try {
@@ -116,7 +103,15 @@ export default function AdminDashboard() {
               {isLoading && <p className="text-sm text-smoke">Memuat ringkasan...</p>}
             </div>
 
-            {error && <div className="error-panel mt-4 text-sm">{error}</div>}
+            {error && (
+              <div className="error-panel mt-4 text-sm">
+                <p className="font-semibold text-porcelain">Ringkasan belum bisa dimuat.</p>
+                <p className="mt-1">{error}</p>
+                <button type="button" onClick={loadProducts} className="btn-secondary mt-4">
+                  Coba Lagi
+                </button>
+              </div>
+            )}
 
             {!error && (
               <div className="mt-5 grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
@@ -128,6 +123,16 @@ export default function AdminDashboard() {
                     <p className="mt-1 text-xs font-semibold uppercase tracking-[0.14em] text-smoke">{stat.label}</p>
                   </div>
                 ))}
+              </div>
+            )}
+
+            {!isLoading && !error && products.length === 0 && (
+              <div className="state-panel mt-5 border-dashed text-center">
+                <p className="text-lg font-semibold text-porcelain">Belum ada produk.</p>
+                <p className="mt-2 text-sm text-smoke">Mulai isi katalog dengan membuat produk pertama.</p>
+                <Link to="/admin/products/new" className="btn-primary mt-5">
+                  Tambah Produk
+                </Link>
               </div>
             )}
           </div>
