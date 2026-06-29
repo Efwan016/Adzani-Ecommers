@@ -101,6 +101,8 @@ export function useCart() {
 
   const clearCart = () => updateCart(() => []);
 
+  const replaceCart = (nextItems: CartItem[]) => updateCart(() => nextItems);
+
   const getSubtotal = useMemo(
     () => items.reduce((sum, item) => sum + item.product.price * item.qty, 0),
     [items]
@@ -114,6 +116,7 @@ export function useCart() {
     removeFromCart,
     updateQty,
     clearCart,
+    replaceCart,
     getSubtotal,
     getTotalItems,
   };

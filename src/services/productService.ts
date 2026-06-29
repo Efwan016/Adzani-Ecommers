@@ -106,6 +106,28 @@ export async function getProductById(id: string): Promise<Product | null> {
   return (data ?? null) as Product | null;
 }
 
+export async function getProductsByIds(ids: string[]): Promise<Product[]> {
+  if (!supabase) {
+    throw new Error('Supabase belum dikonfigurasi. Periksa file .env.');
+  }
+
+  const uniqueIds = Array.from(new Set(ids.filter(Boolean)));
+  if (uniqueIds.length === 0) {
+    return [];
+  }
+
+  const { data, error } = await supabase
+    .from('products')
+    .select('*')
+    .in('id', uniqueIds);
+
+  if (error) {
+    throw new Error(error.message);
+  }
+
+  return (data ?? []) as Product[];
+}
+
 export async function createProduct(input: CreateProductInput): Promise<Product> {
   if (!supabase) {
     throw new Error('Supabase belum dikonfigurasi. Periksa file .env.');
