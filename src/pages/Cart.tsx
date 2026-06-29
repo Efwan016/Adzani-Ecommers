@@ -478,6 +478,8 @@ export default function Cart() {
                 <li>Harga dan stok akan dikonfirmasi ulang oleh admin.</li>
                 <li>Keranjang tidak otomatis dikosongkan setelah WhatsApp terbuka.</li>
                 <li>Stok dan harga akan dikonfirmasi admin saat checkout.</li>
+                <li>Keranjang tersimpan di perangkat ini.</li>
+                <li>Keranjang bisa direset saat berganti akun admin.</li>
               </ul>
             </div>
 

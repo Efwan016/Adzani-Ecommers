@@ -1,8 +1,16 @@
 import { useEffect, useMemo, useState } from 'react';
+import type { User } from '@supabase/supabase-js';
+import { supabase } from '../services/supabaseClient';
 import type { CartItem, Product } from '../types/types';
 
 const STORAGE_KEY = 'adzani_cart';
+const OWNER_KEY = 'adzani_cart_owner';
 const CART_CHANGE_EVENT = 'adzani_cart_change';
+const GUEST_OWNER = 'guest';
+
+function getCartOwner(user: User | null) {
+  return user?.email?.trim().toLowerCase() || GUEST_OWNER;
+}
 
 function readStoredCart(): CartItem[] {
   if (typeof window === 'undefined') {
@@ -20,6 +28,22 @@ function readStoredCart(): CartItem[] {
   }
 }
 
+function readStoredOwner() {
+  if (typeof window === 'undefined') {
+    return null;
+  }
+
+  return window.localStorage.getItem(OWNER_KEY);
+}
+
+function writeStoredOwner(owner: string) {
+  if (typeof window === 'undefined') {
+    return;
+  }
+
+  window.localStorage.setItem(OWNER_KEY, owner);
+}
+
 function writeStoredCart(items: CartItem[]) {
   if (typeof window === 'undefined') {
     return;
@@ -29,8 +53,61 @@ function writeStoredCart(items: CartItem[]) {
   window.dispatchEvent(new CustomEvent<CartItem[]>(CART_CHANGE_EVENT, { detail: items }));
 }
 
+function resetStoredCartForOwner(owner: string) {
+  writeStoredOwner(owner);
+  writeStoredCart([]);
+}
+
 export function useCart() {
   const [items, setItems] = useState<CartItem[]>(() => readStoredCart());
+
+  useEffect(() => {
+    const syncCartOwner = (nextOwner: string) => {
+      const previousOwner = readStoredOwner();
+
+      if (!previousOwner) {
+        writeStoredOwner(nextOwner);
+        setItems(readStoredCart());
+        return;
+      }
+
+      if (previousOwner === nextOwner) {
+        setItems(readStoredCart());
+        return;
+      }
+
+      resetStoredCartForOwner(nextOwner);
+      setItems([]);
+    };
+
+    const client = supabase;
+    if (!client) {
+      syncCartOwner(GUEST_OWNER);
+      return;
+    }
+
+    let isMounted = true;
+
+    const initializeOwner = async () => {
+      const { data } = await client.auth.getSession();
+      if (!isMounted) return;
+
+      syncCartOwner(getCartOwner(data.session?.user ?? null));
+    };
+
+    initializeOwner();
+
+    const { data: authListener } = client.auth.onAuthStateChange((_event, session) => {
+      if (!isMounted) return;
+
+      syncCartOwner(getCartOwner(session?.user ?? null));
+    });
+
+    return () => {
+      isMounted = false;
+      authListener.subscription.unsubscribe();
+    };
+  }, []);
 
   useEffect(() => {
     const syncCart = (event: Event) => {
