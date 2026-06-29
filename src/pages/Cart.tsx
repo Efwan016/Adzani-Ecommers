@@ -2,7 +2,14 @@ import { useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { formatCurrency } from '../lib/formatCurrency';
 import { useCart } from '../hooks/useCart';
-import { generateWhatsAppOrderMessage, getWhatsAppCheckoutUrl, type CheckoutInfo, type PickupMethod } from '../services/whatsappService';
+import { getProductsByIds } from '../services/productService';
+import { createOrder } from '../services/orderService';
+import { generateWhatsAppOrderMessage, getWhatsAppCheckoutUrl, getWhatsAppUrlForMessage, type CheckoutInfo, type PickupMethod } from '../services/whatsappService';
+
+type PriceChange = {
+  previous: number;
+  current: number;
+};
 
 function getProductInitials(name: string) {
   return name
@@ -29,10 +36,16 @@ function ImageFallback({ name }: { name: string }) {
 }
 
 export default function Cart() {
-  const { items, removeFromCart, updateQty, clearCart, getSubtotal } = useCart();
+  const { items, removeFromCart, updateQty, clearCart, replaceCart, getSubtotal } = useCart();
   const [errorMessage, setErrorMessage] = useState('');
+  const [cartRefreshMessage, setCartRefreshMessage] = useState('');
+  const [isRefreshingCart, setIsRefreshingCart] = useState(false);
+  const [isSavingOrder, setIsSavingOrder] = useState(false);
   const [hasOpenedWhatsApp, setHasOpenedWhatsApp] = useState(false);
+  const [savedOrderId, setSavedOrderId] = useState('');
   const [lastCheckoutUrl, setLastCheckoutUrl] = useState('');
+  const [unavailableProductIds, setUnavailableProductIds] = useState<Set<string>>(() => new Set());
+  const [priceChanges, setPriceChanges] = useState<Record<string, PriceChange>>({});
   const [checkoutInfo, setCheckoutInfo] = useState<CheckoutInfo>({
     customerName: '',
     orderNote: '',
@@ -43,11 +56,17 @@ export default function Cart() {
   const totalQty = items.reduce((sum, item) => sum + item.qty, 0);
   const productTypes = items.length;
   const invalidItems = useMemo(() => {
-    return items.filter((item) => item.product.stock <= 0 || item.qty > item.product.stock);
-  }, [items]);
+    return items.filter((item) =>
+      unavailableProductIds.has(item.product.id) ||
+      !item.product.is_active ||
+      item.product.stock <= 0 ||
+      item.qty > item.product.stock
+    );
+  }, [items, unavailableProductIds]);
   const isCartInvalid = invalidItems.length > 0;
   const whatsappPreview = items.length > 0 ? generateWhatsAppOrderMessage(items, checkoutInfo) : '';
-  const isCheckoutDisabled = items.length === 0 || isCartInvalid;
+  const isCheckoutDisabled = items.length === 0 || isCartInvalid || isSavingOrder;
+  const shortOrderId = savedOrderId ? savedOrderId.slice(0, 8).toUpperCase() : '';
 
   const markImageAsBroken = (productId: string) => {
     setBrokenImageIds((current) => {
@@ -64,7 +83,97 @@ export default function Cart() {
     setErrorMessage('');
   };
 
-  const handleCheckout = () => {
+  const handleRemoveItem = (productId: string) => {
+    removeFromCart(productId);
+    setUnavailableProductIds((current) => {
+      if (!current.has(productId)) return current;
+
+      const next = new Set(current);
+      next.delete(productId);
+      return next;
+    });
+    setPriceChanges((current) => {
+      if (!current[productId]) return current;
+
+      const next = { ...current };
+      delete next[productId];
+      return next;
+    });
+  };
+
+  const handleRefreshCart = async () => {
+    if (items.length === 0 || isRefreshingCart) return;
+
+    setIsRefreshingCart(true);
+    setErrorMessage('');
+    setCartRefreshMessage('');
+
+    try {
+      const latestProducts = await getProductsByIds(items.map((item) => item.product.id));
+      const latestById = new Map(latestProducts.map((product) => [product.id, product]));
+      const nextUnavailableIds = new Set<string>();
+      const nextPriceChanges: Record<string, PriceChange> = {};
+      let updatedItemCount = 0;
+
+      const refreshedItems = items.map((item) => {
+        const latestProduct = latestById.get(item.product.id);
+
+        if (!latestProduct) {
+          nextUnavailableIds.add(item.product.id);
+          return item;
+        }
+
+        const hasProductChanged =
+          item.product.name !== latestProduct.name ||
+          item.product.slug !== latestProduct.slug ||
+          item.product.price !== latestProduct.price ||
+          item.product.stock !== latestProduct.stock ||
+          item.product.image_url !== latestProduct.image_url ||
+          item.product.is_active !== latestProduct.is_active;
+
+        if (hasProductChanged) {
+          updatedItemCount += 1;
+        }
+
+        if (item.product.price !== latestProduct.price) {
+          nextPriceChanges[item.product.id] = {
+            previous: item.product.price,
+            current: latestProduct.price,
+          };
+        }
+
+        return {
+          ...item,
+          product: latestProduct,
+        };
+      });
+
+      replaceCart(refreshedItems);
+      setUnavailableProductIds(nextUnavailableIds);
+      setPriceChanges(nextPriceChanges);
+
+      const invalidCount = refreshedItems.filter((item) =>
+        nextUnavailableIds.has(item.product.id) ||
+        !item.product.is_active ||
+        item.product.stock <= 0 ||
+        item.qty > item.product.stock
+      ).length;
+
+      if (invalidCount > 0 || Object.keys(nextPriceChanges).length > 0) {
+        setCartRefreshMessage('Keranjang diperbarui. Cek warning pada item sebelum checkout.');
+      } else if (updatedItemCount > 0) {
+        setCartRefreshMessage('Keranjang sudah diperbarui dengan data produk terbaru.');
+      } else {
+        setCartRefreshMessage('Keranjang sudah memakai data produk terbaru.');
+      }
+    } catch (error) {
+      setErrorMessage(error instanceof Error ? error.message : 'Gagal refresh keranjang.');
+    } finally {
+      setIsRefreshingCart(false);
+    }
+  };
+
+  const handleCheckout = async () => {
     setErrorMessage('');
 
     if (isCartInvalid) {
@@ -72,13 +181,27 @@ export default function Cart() {
       return;
     }
 
+    if (items.length === 0 || isSavingOrder) return;
+
+    setIsSavingOrder(true);
+
     try {
-      const url = getWhatsAppCheckoutUrl(items, checkoutInfo);
+      const whatsappMessage = generateWhatsAppOrderMessage(items, checkoutInfo);
+      const url = getWhatsAppUrlForMessage(whatsappMessage);
+      const order = await createOrder({
+        items,
+        checkoutInfo,
+        whatsappMessage,
+      });
+
+      setSavedOrderId(order.id);
       setLastCheckoutUrl(url);
       setHasOpenedWhatsApp(true);
       window.open(url, '_blank', 'noopener,noreferrer');
     } catch (error) {
-      setErrorMessage(error instanceof Error ? error.message : 'WhatsApp Failed Open');
+      setErrorMessage(error instanceof Error ? error.message : 'Order gagal disimpan. Silakan coba lagi.');
+    } finally {
+      setIsSavingOrder(false);
     }
   };
 
@@ -111,6 +234,10 @@ export default function Cart() {
     if (!shouldClear) return;
 
     clearCart();
+    setUnavailableProductIds(new Set());
+    setPriceChanges({});
+    setCartRefreshMessage('');
+    setSavedOrderId('');
     setErrorMessage('');
   };
 
@@ -151,9 +278,14 @@ export default function Cart() {
         <div className="surface-card mb-6 border-sage/35 bg-sage/8 p-5 md:p-6">
           <div className="grid gap-5 lg:grid-cols-[1fr_auto] lg:items-center">
             <div>
-              <p className="eyebrow text-sage">Pesanan diarahkan ke WhatsApp</p>
+              <p className="eyebrow text-sage">Order dicatat</p>
               <h2 className="mt-2 text-2xl font-semibold text-porcelain">Lanjutkan chat dengan admin Adzani</h2>
               <div className="mt-3 space-y-2 text-sm leading-7 text-mist">
+                {shortOrderId && (
+                  <p>
+                    Order ID: <span className="font-semibold text-porcelain">#{shortOrderId}</span>
+                  </p>
+                )}
                 <p>WhatsApp sudah dibuka untuk mengirim detail pesanan kamu.</p>
                 <p>Admin akan konfirmasi ulang stok, harga, dan detail pengambilan sebelum pesanan diproses.</p>
                 <p>Cart tidak otomatis dihapus, jadi kamu masih bisa cek ulang atau membuka WhatsApp lagi.</p>
@@ -204,14 +336,17 @@ export default function Cart() {
             {isCartInvalid && (
               <div className="rounded-md border border-blush/30 bg-blush/10 p-4 text-sm leading-6 text-blush">
                 <p className="font-semibold text-porcelain">Keranjang perlu disesuaikan.</p>
-                <p className="mt-1">Ada item dengan stok habis atau jumlah melebihi stok. Sesuaikan jumlah atau hapus item sebelum checkout.</p>
+                <p className="mt-1">Ada item yang stoknya bermasalah, tidak aktif, atau tidak tersedia lagi. Refresh, sesuaikan jumlah, atau hapus item sebelum checkout.</p>
               </div>
             )}
 
             {items.map((item) => {
+              const isProductUnavailable = unavailableProductIds.has(item.product.id);
+              const isProductInactive = !item.product.is_active;
               const isStockEmpty = item.product.stock <= 0;
               const isQtyOverStock = item.qty > item.product.stock;
               const isAtMaxStock = item.product.stock > 0 && item.qty >= item.product.stock;
+              const priceChange = priceChanges[item.product.id];
               const shouldShowImage = Boolean(item.product.image_url) && !brokenImageIds.has(item.product.id);
 
               return (
@@ -249,10 +384,18 @@ export default function Cart() {
                       )}
                     </div>
 
-                    {(isStockEmpty || isQtyOverStock) && (
-                      <p className="rounded-md border border-blush/30 bg-blush/10 px-3 py-2 text-sm text-blush">
-                        {isStockEmpty ? 'Item ini sedang stok habis.' : 'Jumlah item melebihi stok tersedia.'}
-                      </p>
+                    {(isProductUnavailable || isProductInactive || isStockEmpty || isQtyOverStock || priceChange) && (
+                      <div className="space-y-2 rounded-md border border-blush/30 bg-blush/10 px-3 py-3 text-sm leading-6 text-blush">
+                        {isProductUnavailable && <p>Produk ini tidak ditemukan atau sudah tidak aktif di katalog.</p>}
+                        {!isProductUnavailable && isProductInactive && <p>Produk ini sedang nonaktif dan belum bisa checkout.</p>}
+                        {isStockEmpty && <p>Stok terbaru produk ini sedang kosong.</p>}
+                        {isQtyOverStock && <p>Qty cart melebihi stok terbaru. Stok tersedia: {item.product.stock}.</p>}
+                        {priceChange && (
+                          <p>
+                            Harga berubah dari {formatCurrency(priceChange.previous)} menjadi {formatCurrency(priceChange.current)}.
+                          </p>
+                        )}
+                      </div>
                     )}
 
                     <p className="text-sm text-mist">
@@ -294,7 +437,7 @@ export default function Cart() {
 
                     <button
                       type="button"
-                      onClick={() => removeFromCart(item.product.id)}
+                      onClick={() => handleRemoveItem(item.product.id)}
                       className="w-fit rounded-md border border-blush/30 bg-blush/8 px-3 py-2 text-xs font-bold uppercase tracking-[0.14em] text-blush hover:bg-blush/14"
                     >
                       Hapus
@@ -334,7 +477,26 @@ export default function Cart() {
                 <li>Checkout akan diarahkan ke WhatsApp admin.</li>
                 <li>Harga dan stok akan dikonfirmasi ulang oleh admin.</li>
                 <li>Keranjang tidak otomatis dikosongkan setelah WhatsApp terbuka.</li>
+                <li>Stok dan harga akan dikonfirmasi admin saat checkout.</li>
               </ul>
+            </div>
+
+            <div className="mt-5 rounded-md border border-white/10 bg-white/5 p-4">
+              <p className="text-xs font-semibold uppercase tracking-[0.16em] text-smoke">Recovery cart</p>
+              <p className="mt-2 text-sm leading-6 text-mist">
+                Refresh untuk mengambil stok, harga, nama, foto, dan status produk terbaru dari katalog.
+              </p>
+              <button
+                type="button"
+                onClick={handleRefreshCart}
+                disabled={items.length === 0 || isRefreshingCart}
+                className="btn-secondary mt-4 w-full disabled:cursor-not-allowed disabled:opacity-50"
+              >
+                {isRefreshingCart ? 'Refresh Keranjang...' : 'Refresh Keranjang'}
+              </button>
+              {cartRefreshMessage && (
+                <p className="mt-3 text-sm leading-6 text-sage">{cartRefreshMessage}</p>
+              )}
             </div>
 
             <div className="mt-5 space-y-4 rounded-md border border-white/10 bg-white/5 p-4">
@@ -391,7 +553,7 @@ export default function Cart() {
             {isCartInvalid && (
               <div className="mt-4 rounded-md border border-blush/30 bg-blush/10 p-4 text-sm leading-6 text-blush">
                 <p className="font-semibold text-porcelain">Checkout dinonaktifkan.</p>
-                <p className="mt-1">Perbaiki item bertanda stok bermasalah agar WhatsApp checkout bisa digunakan.</p>
+                <p className="mt-1">Perbaiki item bertanda warning agar WhatsApp checkout bisa digunakan.</p>
               </div>
             )}
 
@@ -403,7 +565,7 @@ export default function Cart() {
               disabled={isCheckoutDisabled}
               className="btn-primary mt-5 w-full py-4 text-base disabled:cursor-not-allowed disabled:opacity-50"
             >
-              {isCartInvalid ? 'Perbaiki Keranjang Dulu' : 'Checkout via WhatsApp'}
+              {isSavingOrder ? 'Menyimpan Order...' : isCartInvalid ? 'Perbaiki Keranjang Dulu' : 'Checkout via WhatsApp'}
             </button>
 
             <button

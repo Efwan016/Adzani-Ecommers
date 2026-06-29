@@ -17,3 +17,29 @@ export type CartItem = {
   product: Product;
   qty: number;
 };
+
+export type OrderItem = {
+  product_id: string;
+  name: string;
+  slug: string;
+  category: string;
+  price: number;
+  qty: number;
+  subtotal: number;
+  image_url: string | null;
+};
+
+export type OrderStatus = 'pending' | 'confirmed' | 'completed' | 'cancelled';
+
+export type Order = {
+  id: string;
+  customer_name: string | null;
+  pickup_method: string | null;
+  customer_note: string | null;
+  items: OrderItem[];
+  total: number;
+  status: OrderStatus;
+  whatsapp_message: string | null;
+  created_at: string;
+  updated_at: string;
+};

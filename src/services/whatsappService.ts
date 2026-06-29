@@ -45,17 +45,25 @@ export function generateWhatsAppOrderMessage(items: CartItem[], checkoutInfo: Ch
 }
 
 export function getWhatsAppCheckoutUrl(items: CartItem[], checkoutInfo: CheckoutInfo = {}): string {
+  if (items.length === 0) {
+    throw new Error('Keranjang kosong, tidak ada item untuk checkout.');
+  }
+
+  return getWhatsAppUrlForMessage(generateWhatsAppOrderMessage(items, checkoutInfo));
+}
+
+export function getWhatsAppUrlForMessage(messageText: string): string {
   const phone = import.meta.env.VITE_WHATSAPP_ADMIN as string | undefined;
 
   if (!phone || !phone.trim()) {
     throw new Error('Nomor WhatsApp admin belum diatur. Tambahkan VITE_WHATSAPP_ADMIN di .env');
   }
 
-  if (items.length === 0) {
-    throw new Error('Keranjang kosong, tidak ada item untuk checkout.');
+  if (!messageText.trim()) {
+    throw new Error('Pesan WhatsApp kosong.');
   }
 
-  const message = encodeURIComponent(generateWhatsAppOrderMessage(items, checkoutInfo));
+  const message = encodeURIComponent(messageText);
 
   return `https://wa.me/${phone.trim()}?text=${message}`;
 }
