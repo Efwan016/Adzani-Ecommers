@@ -12,16 +12,22 @@ const shortcuts = [
     tone: 'text-sage',
   },
   {
+    title: 'Order WhatsApp',
+    copy: 'Lihat order masuk dan ubah status prosesnya.',
+    href: '/admin/orders',
+    tone: 'text-champagne',
+  },
+  {
     title: 'Tambah Produk',
     copy: 'Buat item baru untuk masuk ke katalog customer.',
     href: '/admin/products/new',
-    tone: 'text-champagne',
+    tone: 'text-porcelain',
   },
   {
     title: 'Lihat Katalog',
     copy: 'Cek tampilan produk dari sisi customer.',
     href: '/products',
-    tone: 'text-porcelain',
+    tone: 'text-mist',
   },
   {
     title: 'Kembali ke Website',

@@ -10,6 +10,7 @@ const Cart = lazy(() => import('./pages/Cart'));
 const Login = lazy(() => import('./pages/Login'));
 const AdminDashboard = lazy(() => import('./pages/admin/AdminDashboard'));
 const AdminProducts = lazy(() => import('./pages/admin/AdminProducts'));
+const AdminOrders = lazy(() => import('./pages/admin/AdminOrders'));
 const ProductForm = lazy(() => import('./pages/admin/ProductForm'));
 
 function RouteFallback() {
@@ -93,6 +94,18 @@ export default function App() {
               <Layout>
                 <LazyRoute>
                   <AdminProducts />
+                </LazyRoute>
+              </Layout>
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/admin/orders"
+          element={
+            <ProtectedRoute>
+              <Layout>
+                <LazyRoute>
+                  <AdminOrders />
                 </LazyRoute>
               </Layout>
             </ProtectedRoute>

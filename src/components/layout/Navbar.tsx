@@ -53,7 +53,10 @@ export default function Navbar() {
   const navItems: NavItem[] = [
     { label: 'Home', to: '/' },
     { label: 'Katalog', to: '/products' },
-    ...(canOpenAdmin ? [{ label: 'Admin', to: '/admin' }] : []),
+    ...(canOpenAdmin ? [
+      { label: 'Admin', to: '/admin' },
+      { label: 'Orders', to: '/admin/orders' },
+    ] : []),
   ];
 
   const closeMenu = () => setIsMenuOpen(false);
