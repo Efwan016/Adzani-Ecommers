@@ -31,7 +31,8 @@ function ImageFallback({ name }: { name: string }) {
 export default function Cart() {
   const { items, removeFromCart, updateQty, clearCart, getSubtotal } = useCart();
   const [errorMessage, setErrorMessage] = useState('');
-  const [checkoutMessage, setCheckoutMessage] = useState('');
+  const [hasOpenedWhatsApp, setHasOpenedWhatsApp] = useState(false);
+  const [lastCheckoutUrl, setLastCheckoutUrl] = useState('');
   const [checkoutInfo, setCheckoutInfo] = useState<CheckoutInfo>({
     customerName: '',
     orderNote: '',
@@ -46,6 +47,7 @@ export default function Cart() {
   }, [items]);
   const isCartInvalid = invalidItems.length > 0;
   const whatsappPreview = items.length > 0 ? generateWhatsAppOrderMessage(items, checkoutInfo) : '';
+  const isCheckoutDisabled = items.length === 0 || isCartInvalid;
 
   const markImageAsBroken = (productId: string) => {
     setBrokenImageIds((current) => {
@@ -60,12 +62,10 @@ export default function Cart() {
   const handleQtyChange = (productId: string, nextQty: number, stock: number) => {
     updateQty(productId, clampQty(nextQty, stock));
     setErrorMessage('');
-    setCheckoutMessage('');
   };
 
   const handleCheckout = () => {
     setErrorMessage('');
-    setCheckoutMessage('');
 
     if (isCartInvalid) {
       setErrorMessage('Beberapa item tidak valid karena stok habis atau jumlah melebihi stok.');
@@ -73,13 +73,49 @@ export default function Cart() {
     }
 
     try {
-      setCheckoutMessage('WhatsApp will be open new tab, chart stay save after your delete');
       const url = getWhatsAppCheckoutUrl(items, checkoutInfo);
+      setLastCheckoutUrl(url);
+      setHasOpenedWhatsApp(true);
       window.open(url, '_blank', 'noopener,noreferrer');
     } catch (error) {
-      setCheckoutMessage('');
       setErrorMessage(error instanceof Error ? error.message : 'WhatsApp Failed Open');
     }
+  };
+
+  const handleReopenWhatsApp = () => {
+    setErrorMessage('');
+
+    try {
+      const url = items.length > 0 && !isCartInvalid
+        ? getWhatsAppCheckoutUrl(items, checkoutInfo)
+        : lastCheckoutUrl;
+
+      if (!url) return;
+
+      setLastCheckoutUrl(url);
+      window.open(url, '_blank', 'noopener,noreferrer');
+    } catch (error) {
+      if (lastCheckoutUrl) {
+        window.open(lastCheckoutUrl, '_blank', 'noopener,noreferrer');
+        return;
+      }
+
+      setErrorMessage(error instanceof Error ? error.message : 'WhatsApp gagal dibuka ulang.');
+    }
+  };
+
+  const handleClearCart = (confirmationMessage = 'Kosongkan semua item dari cart?') => {
+    if (items.length === 0) return;
+
+    const shouldClear = window.confirm(confirmationMessage);
+    if (!shouldClear) return;
+
+    clearCart();
+    setErrorMessage('');
+  };
+
+  const handleClearCartAfterChat = () => {
+    handleClearCart('Kosongkan cart sekarang? Pastikan pesanan sudah kamu chat ke admin.');
   };
 
   return (
@@ -110,6 +146,44 @@ export default function Cart() {
           </div>
         </div>
       </div>
+
+      {hasOpenedWhatsApp && (
+        <div className="surface-card mb-6 border-sage/35 bg-sage/8 p-5 md:p-6">
+          <div className="grid gap-5 lg:grid-cols-[1fr_auto] lg:items-center">
+            <div>
+              <p className="eyebrow text-sage">Pesanan diarahkan ke WhatsApp</p>
+              <h2 className="mt-2 text-2xl font-semibold text-porcelain">Lanjutkan chat dengan admin Adzani</h2>
+              <div className="mt-3 space-y-2 text-sm leading-7 text-mist">
+                <p>WhatsApp sudah dibuka untuk mengirim detail pesanan kamu.</p>
+                <p>Admin akan konfirmasi ulang stok, harga, dan detail pengambilan sebelum pesanan diproses.</p>
+                <p>Cart tidak otomatis dihapus, jadi kamu masih bisa cek ulang atau membuka WhatsApp lagi.</p>
+              </div>
+            </div>
+
+            <div className="grid gap-3 sm:grid-cols-3 lg:min-w-[22rem] lg:grid-cols-1">
+              <button
+                type="button"
+                onClick={handleClearCartAfterChat}
+                disabled={items.length === 0}
+                className="rounded-md border border-blush/30 bg-blush/10 px-4 py-3 text-sm font-bold text-blush hover:bg-blush/15 disabled:cursor-not-allowed disabled:opacity-50"
+              >
+                Saya sudah chat admin, kosongkan cart
+              </button>
+              <Link to="/products" className="btn-secondary text-center">
+                Lanjut belanja
+              </Link>
+              <button
+                type="button"
+                onClick={handleReopenWhatsApp}
+                disabled={!lastCheckoutUrl && isCheckoutDisabled}
+                className="btn-primary text-center disabled:cursor-not-allowed disabled:opacity-50"
+              >
+                Buka WhatsApp lagi
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {items.length === 0 ? (
         <div className="surface-card mx-auto max-w-2xl p-8 text-center sm:p-10">
@@ -321,18 +395,12 @@ export default function Cart() {
               </div>
             )}
 
-            {checkoutMessage && (
-              <div className="mt-4 rounded-md border border-sage/30 bg-sage/10 p-4 text-sm leading-6 text-sage">
-                {checkoutMessage}
-              </div>
-            )}
-
             {errorMessage && <p className="error-panel mt-4 text-sm">{errorMessage}</p>}
 
             <button
               type="button"
               onClick={handleCheckout}
-              disabled={items.length === 0 || isCartInvalid}
+              disabled={isCheckoutDisabled}
               className="btn-primary mt-5 w-full py-4 text-base disabled:cursor-not-allowed disabled:opacity-50"
             >
               {isCartInvalid ? 'Perbaiki Keranjang Dulu' : 'Checkout via WhatsApp'}
@@ -340,7 +408,7 @@ export default function Cart() {
 
             <button
               type="button"
-              onClick={clearCart}
+              onClick={() => handleClearCart()}
               disabled={items.length === 0}
               className="mt-3 w-full rounded-md border border-white/10 bg-white/5 px-4 py-3 text-sm font-semibold text-smoke hover:border-blush/30 hover:bg-blush/10 hover:text-blush disabled:cursor-not-allowed disabled:opacity-50"
             >
