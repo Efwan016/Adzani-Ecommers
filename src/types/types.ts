@@ -34,6 +34,7 @@ export type OrderStatus = 'pending' | 'confirmed' | 'completed' | 'cancelled';
 export type Order = {
   id: string;
   customer_name: string | null;
+  customer_phone?: string | null;
   pickup_method: string | null;
   customer_note: string | null;
   items: OrderItem[];

@@ -48,6 +48,7 @@ export default function Cart() {
   const [priceChanges, setPriceChanges] = useState<Record<string, PriceChange>>({});
   const [checkoutInfo, setCheckoutInfo] = useState<CheckoutInfo>({
     customerName: '',
+    customerPhone: '',
     orderNote: '',
     pickupMethod: '',
   });
@@ -517,6 +518,18 @@ export default function Cart() {
                   onChange={(event) => setCheckoutInfo((current) => ({ ...current, customerName: event.target.value }))}
                   className="field-control"
                   placeholder="Nama kamu"
+                />
+              </label>
+
+              <label className="field-label">
+                <span>Nomor WhatsApp</span>
+                <input
+                  type="tel"
+                  inputMode="tel"
+                  value={checkoutInfo.customerPhone ?? ''}
+                  onChange={(event) => setCheckoutInfo((current) => ({ ...current, customerPhone: event.target.value }))}
+                  className="field-control"
+                  placeholder="08xxxxxxxxxx"
                 />
               </label>
 

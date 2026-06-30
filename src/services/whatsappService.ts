@@ -5,6 +5,7 @@ export type PickupMethod = 'Ambil di toko' | 'Tanya admin dulu' | '';
 
 export type CheckoutInfo = {
   customerName?: string;
+  customerPhone?: string;
   orderNote?: string;
   pickupMethod?: PickupMethod;
 };
@@ -22,11 +23,13 @@ export function generateWhatsAppOrderMessage(items: CartItem[], checkoutInfo: Ch
 
   const total = items.reduce((sum, item) => sum + item.product.price * item.qty, 0);
   const customerName = checkoutInfo.customerName?.trim();
+  const customerPhone = checkoutInfo.customerPhone?.trim();
   const orderNote = checkoutInfo.orderNote?.trim();
   const pickupMethod = checkoutInfo.pickupMethod?.trim();
 
   const customerLines = [
     customerName ? `Nama: ${customerName}` : null,
+    customerPhone ? `Nomor WhatsApp: ${customerPhone}` : null,
     pickupMethod ? `Metode ambil: ${pickupMethod}` : null,
     orderNote ? `Catatan: ${orderNote}` : null,
   ].filter(Boolean);

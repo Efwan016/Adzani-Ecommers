@@ -305,6 +305,9 @@ export default function AdminDashboard() {
                         <StockSyncBadge order={order} />
                       </div>
                       <p className="mt-2 text-sm font-semibold text-mist">{getCustomerLabel(order)}</p>
+                      {order.customer_phone && (
+                        <p className="mt-1 break-all text-xs font-semibold text-smoke">{order.customer_phone}</p>
+                      )}
                       <p className="mt-1 text-xs text-smoke">{formatDateTime(order.created_at)}</p>
                     </div>
                     <p className="text-lg font-semibold text-sage">{formatCurrency(order.total)}</p>

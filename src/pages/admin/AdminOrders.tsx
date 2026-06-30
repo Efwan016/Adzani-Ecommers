@@ -127,6 +127,7 @@ function buildOrdersCsv(ordersToExport: Order[]) {
     'order_id',
     'order_id_short',
     'customer_name',
+    'customer_phone',
     'pickup_method',
     'customer_note',
     'status',
@@ -144,6 +145,7 @@ function buildOrdersCsv(ordersToExport: Order[]) {
     order.id,
     getShortOrderId(order.id),
     order.customer_name,
+    order.customer_phone,
     order.pickup_method,
     order.customer_note,
     order.status,
@@ -237,6 +239,7 @@ export default function AdminOrders() {
       const matchesSearch =
         !query ||
         getCustomerLabel(order).toLowerCase().includes(query) ||
+        (order.customer_phone?.toLowerCase().includes(query) ?? false) ||
         order.id.toLowerCase().includes(query) ||
         getShortOrderId(order.id).toLowerCase().includes(query) ||
         order.items.some((item) => item.name.toLowerCase().includes(query));
@@ -538,7 +541,7 @@ export default function AdminOrders() {
                 type="search"
                 value={searchQuery}
                 onChange={(event) => setSearchQuery(event.target.value)}
-                placeholder="Customer, order ID, atau nama item"
+                placeholder="Customer, nomor WhatsApp, order ID, atau nama item"
                 className="field-control min-h-12 text-base"
               />
             </label>
@@ -635,6 +638,7 @@ export default function AdminOrders() {
                         </td>
                         <td className="min-w-56 px-4 py-4">
                           <p className="font-semibold text-porcelain">{getCustomerLabel(order)}</p>
+                          {order.customer_phone && <p className="mt-1 text-xs font-semibold text-mist">{order.customer_phone}</p>}
                           {order.pickup_method && <p className="mt-1 text-xs text-sage">{order.pickup_method}</p>}
                           {order.customer_note && <p className="mt-2 max-w-xs text-xs leading-5 text-smoke">{order.customer_note}</p>}
                         </td>
@@ -695,6 +699,7 @@ export default function AdminOrders() {
                     <div>
                       <p className="text-xs font-semibold uppercase tracking-[0.16em] text-smoke">#{getShortOrderId(order.id)}</p>
                       <h3 className="mt-1 text-xl font-semibold leading-snug text-porcelain">{getCustomerLabel(order)}</h3>
+                      {order.customer_phone && <p className="mt-1 text-sm font-semibold text-mist">{order.customer_phone}</p>}
                       <p className="mt-1 text-xs text-smoke">{formatDateTime(order.created_at)}</p>
                       <div className="mt-2">
                         <StockSyncBadge order={order} />
@@ -897,6 +902,10 @@ export default function AdminOrders() {
                 <div className="surface-muted p-4">
                   <p className="text-xs font-semibold uppercase tracking-[0.14em] text-smoke">Customer</p>
                   <p className="mt-2 font-semibold text-porcelain">{getCustomerLabel(selectedOrder)}</p>
+                </div>
+                <div className="surface-muted p-4">
+                  <p className="text-xs font-semibold uppercase tracking-[0.14em] text-smoke">Nomor WhatsApp</p>
+                  <p className="mt-2 break-all font-semibold text-porcelain">{selectedOrder.customer_phone || '-'}</p>
                 </div>
                 <div className="surface-muted p-4">
                   <p className="text-xs font-semibold uppercase tracking-[0.14em] text-smoke">Metode ambil</p>

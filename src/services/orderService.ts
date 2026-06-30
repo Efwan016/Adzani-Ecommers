@@ -57,6 +57,7 @@ export async function createOrder(input: CreateOrderInput): Promise<CreateOrderR
       {
         id: orderId,
         customer_name: trimToNullable(input.checkoutInfo?.customerName),
+        customer_phone: trimToNullable(input.checkoutInfo?.customerPhone),
         pickup_method: trimToNullable(input.checkoutInfo?.pickupMethod),
         customer_note: trimToNullable(input.checkoutInfo?.orderNote),
         items: orderItems,
