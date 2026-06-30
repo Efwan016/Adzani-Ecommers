@@ -66,6 +66,14 @@ function StatusBadge({ status }: { status: OrderStatus }) {
 }
 
 function StockSyncBadge({ order }: { order: Order }) {
+  if (order.stock_restored) {
+    return (
+      <span className="inline-flex w-fit rounded-full border border-blush/30 bg-blush/10 px-2.5 py-1 text-[0.68rem] font-bold uppercase tracking-[0.12em] text-blush">
+        Stok restore
+      </span>
+    );
+  }
+
   return (
     <span className={`inline-flex w-fit rounded-full border px-2.5 py-1 text-[0.68rem] font-bold uppercase tracking-[0.12em] ${
       order.stock_deducted

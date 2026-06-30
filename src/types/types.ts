@@ -42,6 +42,8 @@ export type Order = {
   whatsapp_message: string | null;
   stock_deducted?: boolean;
   stock_deducted_at?: string | null;
+  stock_restored?: boolean;
+  stock_restored_at?: string | null;
   created_at: string;
   updated_at: string;
 };

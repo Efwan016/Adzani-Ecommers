@@ -30,6 +30,14 @@ function StatusBadge({ status }: { status: OrderStatus }) {
 }
 
 function StockSyncBadge({ order }: { order: Order }) {
+  if (order.stock_restored) {
+    return (
+      <span className="inline-flex w-fit rounded-full border border-blush/30 bg-blush/10 px-2.5 py-1 text-[0.68rem] font-bold uppercase tracking-[0.12em] text-blush">
+        Stok dikembalikan
+      </span>
+    );
+  }
+
   return (
     <span className={`inline-flex w-fit rounded-full border px-2.5 py-1 text-[0.68rem] font-bold uppercase tracking-[0.12em] ${
       order.stock_deducted
@@ -240,6 +248,8 @@ export default function AdminOrders() {
       const stockSyncMessage =
         (status === 'confirmed' || status === 'completed') && updatedOrder.stock_deducted
           ? ' Stok produk sudah dikurangi.'
+          : status === 'cancelled' && updatedOrder.stock_restored
+            ? ' Stok produk sudah dikembalikan.'
           : '';
       setFeedbackMessage(`Order #${getShortOrderId(updatedOrder.id)} berhasil diubah ke ${updatedOrder.status}.${stockSyncMessage}`);
     } catch (err) {
@@ -628,9 +638,14 @@ export default function AdminOrders() {
                       Dikurangi pada {formatDateTime(selectedOrder.stock_deducted_at)}
                     </span>
                   )}
+                  {selectedOrder.stock_restored_at && (
+                    <span className="text-sm text-mist">
+                      Dikembalikan pada {formatDateTime(selectedOrder.stock_restored_at)}
+                    </span>
+                  )}
                 </div>
                 <p className="mt-3 text-sm leading-6 text-mist">
-                  Stok produk otomatis dikurangi saat order masuk ke status confirmed atau completed. Setelah stok dikurangi, perubahan status berikutnya tidak mengurangi stok lagi.
+                  Stok produk otomatis dikurangi saat order masuk ke status confirmed atau completed. Jika order yang sudah mengurangi stok dibatalkan, stok dikembalikan satu kali. Order cancelled yang diproses lagi ke confirmed/completed akan mengurangi stok ulang jika stok tersedia.
                 </p>
               </div>
 
