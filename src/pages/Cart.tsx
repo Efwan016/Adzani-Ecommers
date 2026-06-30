@@ -1,6 +1,7 @@
 import { useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { formatCurrency } from '../lib/formatCurrency';
+import { normalizeIndonesianPhone } from '../lib/phone';
 import { useCart } from '../hooks/useCart';
 import { getProductsByIds } from '../services/productService';
 import { createOrder } from '../services/orderService';
@@ -65,8 +66,14 @@ export default function Cart() {
     );
   }, [items, unavailableProductIds]);
   const isCartInvalid = invalidItems.length > 0;
-  const whatsappPreview = items.length > 0 ? generateWhatsAppOrderMessage(items, checkoutInfo) : '';
-  const isCheckoutDisabled = items.length === 0 || isCartInvalid || isSavingOrder;
+  const normalizedCustomerPhone = normalizeIndonesianPhone(checkoutInfo.customerPhone);
+  const isCustomerPhoneTooShort = normalizedCustomerPhone.length > 0 && normalizedCustomerPhone.length < 10;
+  const normalizedCheckoutInfo: CheckoutInfo = {
+    ...checkoutInfo,
+    customerPhone: normalizedCustomerPhone,
+  };
+  const whatsappPreview = items.length > 0 ? generateWhatsAppOrderMessage(items, normalizedCheckoutInfo) : '';
+  const isCheckoutDisabled = items.length === 0 || isCartInvalid || isSavingOrder || isCustomerPhoneTooShort;
   const shortOrderId = savedOrderId ? savedOrderId.slice(0, 8).toUpperCase() : '';
 
   const markImageAsBroken = (productId: string) => {
@@ -182,16 +189,21 @@ export default function Cart() {
       return;
     }
 
+    if (isCustomerPhoneTooShort) {
+      setErrorMessage('Nomor WhatsApp terlalu pendek. Kosongkan atau isi nomor yang lebih lengkap.');
+      return;
+    }
+
     if (items.length === 0 || isSavingOrder) return;
 
     setIsSavingOrder(true);
 
     try {
-      const whatsappMessage = generateWhatsAppOrderMessage(items, checkoutInfo);
+      const whatsappMessage = generateWhatsAppOrderMessage(items, normalizedCheckoutInfo);
       const url = getWhatsAppUrlForMessage(whatsappMessage);
       const order = await createOrder({
         items,
-        checkoutInfo,
+        checkoutInfo: normalizedCheckoutInfo,
         whatsappMessage,
       });
 
@@ -210,8 +222,8 @@ export default function Cart() {
     setErrorMessage('');
 
     try {
-      const url = items.length > 0 && !isCartInvalid
-        ? getWhatsAppCheckoutUrl(items, checkoutInfo)
+      const url = items.length > 0 && !isCartInvalid && !isCustomerPhoneTooShort
+        ? getWhatsAppCheckoutUrl(items, normalizedCheckoutInfo)
         : lastCheckoutUrl;
 
       if (!url) return;
@@ -531,6 +543,12 @@ export default function Cart() {
                   className="field-control"
                   placeholder="08xxxxxxxxxx"
                 />
+                <span className="text-xs leading-5 text-smoke">Contoh: 08xxxxxxxxxx</span>
+                {isCustomerPhoneTooShort && (
+                  <span className="text-xs leading-5 text-blush">
+                    Nomor WhatsApp terlalu pendek. Kosongkan atau isi nomor yang lebih lengkap.
+                  </span>
+                )}
               </label>
 
               <label className="field-label">
@@ -580,7 +598,7 @@ export default function Cart() {
               disabled={isCheckoutDisabled}
               className="btn-primary mt-5 w-full py-4 text-base disabled:cursor-not-allowed disabled:opacity-50"
             >
-              {isSavingOrder ? 'Menyimpan Order...' : isCartInvalid ? 'Perbaiki Keranjang Dulu' : 'Checkout via WhatsApp'}
+              {isSavingOrder ? 'Menyimpan Order...' : isCartInvalid ? 'Perbaiki Keranjang Dulu' : isCustomerPhoneTooShort ? 'Periksa Nomor WhatsApp' : 'Checkout via WhatsApp'}
             </button>
 
             <button

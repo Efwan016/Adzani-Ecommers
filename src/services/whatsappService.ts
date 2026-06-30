@@ -1,5 +1,6 @@
 import type { CartItem } from '../types/types';
 import { formatCurrency } from '../lib/formatCurrency';
+import { formatPhoneDisplay } from '../lib/phone';
 
 export type PickupMethod = 'Ambil di toko' | 'Tanya admin dulu' | '';
 
@@ -23,7 +24,7 @@ export function generateWhatsAppOrderMessage(items: CartItem[], checkoutInfo: Ch
 
   const total = items.reduce((sum, item) => sum + item.product.price * item.qty, 0);
   const customerName = checkoutInfo.customerName?.trim();
-  const customerPhone = checkoutInfo.customerPhone?.trim();
+  const customerPhone = formatPhoneDisplay(checkoutInfo.customerPhone);
   const orderNote = checkoutInfo.orderNote?.trim();
   const pickupMethod = checkoutInfo.pickupMethod?.trim();
 

@@ -2,6 +2,7 @@ import { useCallback, useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { useAuth } from '../../hooks/useAuth';
 import { formatCurrency } from '../../lib/formatCurrency';
+import { formatPhoneDisplay } from '../../lib/phone';
 import { getOrdersAdmin } from '../../services/orderService';
 import { getAllProductsForAdmin } from '../../services/productService';
 import type { Order, OrderStatus, Product } from '../../types/types';
@@ -52,6 +53,10 @@ function getShortOrderId(id: string) {
 
 function getCustomerLabel(order: Order) {
   return order.customer_name?.trim() || 'Customer WhatsApp';
+}
+
+function getCustomerPhoneDisplay(order: Order) {
+  return formatPhoneDisplay(order.customer_phone);
 }
 
 function formatDateTime(value: string) {
@@ -305,8 +310,8 @@ export default function AdminDashboard() {
                         <StockSyncBadge order={order} />
                       </div>
                       <p className="mt-2 text-sm font-semibold text-mist">{getCustomerLabel(order)}</p>
-                      {order.customer_phone && (
-                        <p className="mt-1 break-all text-xs font-semibold text-smoke">{order.customer_phone}</p>
+                      {getCustomerPhoneDisplay(order) && (
+                        <p className="mt-1 break-all text-xs font-semibold text-smoke">{getCustomerPhoneDisplay(order)}</p>
                       )}
                       <p className="mt-1 text-xs text-smoke">{formatDateTime(order.created_at)}</p>
                     </div>

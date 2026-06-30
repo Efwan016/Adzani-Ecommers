@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { formatCurrency } from '../../lib/formatCurrency';
+import { formatPhoneDisplay, getWhatsAppChatUrl, normalizeIndonesianPhone } from '../../lib/phone';
 import { deleteOrder, getOrdersAdmin, getOrderStatusLogs, updateOrderStatus } from '../../services/orderService';
 import { supabase } from '../../services/supabaseClient';
 import type { Order, OrderStatus, OrderStatusLog } from '../../types/types';
@@ -93,6 +94,10 @@ function getCustomerLabel(order: Order) {
   return order.customer_name?.trim() || 'Customer WhatsApp';
 }
 
+function getCustomerPhoneDisplay(order: Order) {
+  return formatPhoneDisplay(order.customer_phone);
+}
+
 function getOrderActionErrorMessage(error: unknown) {
   const message = error instanceof Error ? error.message : 'Gagal mengubah status order';
 
@@ -145,7 +150,7 @@ function buildOrdersCsv(ordersToExport: Order[]) {
     order.id,
     getShortOrderId(order.id),
     order.customer_name,
-    order.customer_phone,
+    normalizeIndonesianPhone(order.customer_phone),
     order.pickup_method,
     order.customer_note,
     order.status,
@@ -233,13 +238,17 @@ export default function AdminOrders() {
 
   const visibleOrders = useMemo(() => {
     const query = searchQuery.trim().toLowerCase();
+    const normalizedPhoneQuery = normalizeIndonesianPhone(query);
 
     return orders.filter((order) => {
+      const customerPhone = order.customer_phone ?? '';
+      const normalizedCustomerPhone = normalizeIndonesianPhone(customerPhone);
       const matchesStatus = statusFilter === 'all' || order.status === statusFilter;
       const matchesSearch =
         !query ||
         getCustomerLabel(order).toLowerCase().includes(query) ||
-        (order.customer_phone?.toLowerCase().includes(query) ?? false) ||
+        customerPhone.toLowerCase().includes(query) ||
+        (normalizedPhoneQuery.length > 0 && normalizedCustomerPhone.includes(normalizedPhoneQuery)) ||
         order.id.toLowerCase().includes(query) ||
         getShortOrderId(order.id).toLowerCase().includes(query) ||
         order.items.some((item) => item.name.toLowerCase().includes(query));
@@ -626,6 +635,7 @@ export default function AdminOrders() {
                   {visibleOrders.map((order) => {
                     const isBusy = busyOrderId === order.id || deletingOrderId === order.id;
                     const allowedStatusOptions = getStatusSelectOptions(order.status);
+                    const customerPhoneDisplay = getCustomerPhoneDisplay(order);
 
                     return (
                       <tr key={order.id} className="border-t border-white/10 align-top hover:bg-white/4">
@@ -638,7 +648,7 @@ export default function AdminOrders() {
                         </td>
                         <td className="min-w-56 px-4 py-4">
                           <p className="font-semibold text-porcelain">{getCustomerLabel(order)}</p>
-                          {order.customer_phone && <p className="mt-1 text-xs font-semibold text-mist">{order.customer_phone}</p>}
+                          {customerPhoneDisplay && <p className="mt-1 text-xs font-semibold text-mist">{customerPhoneDisplay}</p>}
                           {order.pickup_method && <p className="mt-1 text-xs text-sage">{order.pickup_method}</p>}
                           {order.customer_note && <p className="mt-2 max-w-xs text-xs leading-5 text-smoke">{order.customer_note}</p>}
                         </td>
@@ -692,6 +702,7 @@ export default function AdminOrders() {
             {visibleOrders.map((order) => {
               const isBusy = busyOrderId === order.id || deletingOrderId === order.id;
               const allowedStatusOptions = getStatusSelectOptions(order.status);
+              const customerPhoneDisplay = getCustomerPhoneDisplay(order);
 
               return (
                 <article key={order.id} className="surface-card p-4">
@@ -699,7 +710,7 @@ export default function AdminOrders() {
                     <div>
                       <p className="text-xs font-semibold uppercase tracking-[0.16em] text-smoke">#{getShortOrderId(order.id)}</p>
                       <h3 className="mt-1 text-xl font-semibold leading-snug text-porcelain">{getCustomerLabel(order)}</h3>
-                      {order.customer_phone && <p className="mt-1 text-sm font-semibold text-mist">{order.customer_phone}</p>}
+                      {customerPhoneDisplay && <p className="mt-1 text-sm font-semibold text-mist">{customerPhoneDisplay}</p>}
                       <p className="mt-1 text-xs text-smoke">{formatDateTime(order.created_at)}</p>
                       <div className="mt-2">
                         <StockSyncBadge order={order} />
@@ -905,7 +916,23 @@ export default function AdminOrders() {
                 </div>
                 <div className="surface-muted p-4">
                   <p className="text-xs font-semibold uppercase tracking-[0.14em] text-smoke">Nomor WhatsApp</p>
-                  <p className="mt-2 break-all font-semibold text-porcelain">{selectedOrder.customer_phone || '-'}</p>
+                  {getCustomerPhoneDisplay(selectedOrder) ? (
+                    <div className="mt-2 space-y-3">
+                      <p className="break-all font-semibold text-porcelain">{getCustomerPhoneDisplay(selectedOrder)}</p>
+                      {getWhatsAppChatUrl(selectedOrder.customer_phone) && (
+                        <a
+                          href={getWhatsAppChatUrl(selectedOrder.customer_phone) ?? undefined}
+                          target="_blank"
+                          rel="noreferrer"
+                          className="btn-secondary inline-flex px-3 py-2 text-xs"
+                        >
+                          Chat customer
+                        </a>
+                      )}
+                    </div>
+                  ) : (
+                    <p className="mt-2 font-semibold text-porcelain">-</p>
+                  )}
                 </div>
                 <div className="surface-muted p-4">
                   <p className="text-xs font-semibold uppercase tracking-[0.14em] text-smoke">Metode ambil</p>
