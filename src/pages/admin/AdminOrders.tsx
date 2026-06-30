@@ -103,6 +103,79 @@ function getOrderActionErrorMessage(error: unknown) {
   return message;
 }
 
+function escapeCsvValue(value: string | number | boolean | null | undefined) {
+  const normalized = value == null ? '' : String(value);
+  return `"${normalized.replace(/"/g, '""')}"`;
+}
+
+function getLocalDateStamp(date = new Date()) {
+  const year = date.getFullYear();
+  const month = String(date.getMonth() + 1).padStart(2, '0');
+  const day = String(date.getDate()).padStart(2, '0');
+
+  return `${year}-${month}-${day}`;
+}
+
+function getItemsSummary(order: Order) {
+  return order.items
+    .map((item) => `${item.name} x${item.qty} @${item.price}`)
+    .join('; ');
+}
+
+function buildOrdersCsv(ordersToExport: Order[]) {
+  const headers = [
+    'order_id',
+    'order_id_short',
+    'customer_name',
+    'pickup_method',
+    'customer_note',
+    'status',
+    'total',
+    'stock_deducted',
+    'stock_deducted_at',
+    'stock_restored',
+    'stock_restored_at',
+    'items_summary',
+    'created_at',
+    'updated_at',
+  ];
+
+  const rows = ordersToExport.map((order) => [
+    order.id,
+    getShortOrderId(order.id),
+    order.customer_name,
+    order.pickup_method,
+    order.customer_note,
+    order.status,
+    order.total,
+    Boolean(order.stock_deducted),
+    order.stock_deducted_at,
+    Boolean(order.stock_restored),
+    order.stock_restored_at,
+    getItemsSummary(order),
+    order.created_at,
+    order.updated_at,
+  ]);
+
+  return [
+    headers.map(escapeCsvValue).join(','),
+    ...rows.map((row) => row.map(escapeCsvValue).join(',')),
+  ].join('\n');
+}
+
+function downloadCsv(filename: string, csvContent: string) {
+  const blob = new Blob([`\uFEFF${csvContent}`], { type: 'text/csv;charset=utf-8;' });
+  const url = URL.createObjectURL(blob);
+  const link = document.createElement('a');
+
+  link.href = url;
+  link.download = filename;
+  document.body.appendChild(link);
+  link.click();
+  link.remove();
+  URL.revokeObjectURL(url);
+}
+
 function OrderItems({ order }: { order: Order }) {
   return (
     <div className="space-y-2">
@@ -343,6 +416,18 @@ export default function AdminOrders() {
     setSearchQuery('');
   };
 
+  const handleExportCsv = () => {
+    if (visibleOrders.length === 0) {
+      setFeedbackMessage('Tidak ada data untuk diexport.');
+      return;
+    }
+
+    const csvContent = buildOrdersCsv(visibleOrders);
+    const filename = `adzani-orders-${getLocalDateStamp()}.csv`;
+    downloadCsv(filename, csvContent);
+    setFeedbackMessage(`${visibleOrders.length} order berhasil diexport ke CSV.`);
+  };
+
   return (
     <section className="page-shell">
       <div className="surface-card mb-6 overflow-hidden">
@@ -356,6 +441,15 @@ export default function AdminOrders() {
           </div>
 
           <div className="flex flex-wrap items-center gap-3">
+            <button
+              type="button"
+              onClick={handleExportCsv}
+              disabled={isLoading || visibleOrders.length === 0}
+              className="btn-primary disabled:cursor-not-allowed disabled:opacity-50"
+              title={visibleOrders.length === 0 ? 'Tidak ada data untuk diexport' : 'Export order yang sedang tampil'}
+            >
+              Export CSV
+            </button>
             <button
               type="button"
               onClick={() => loadOrders()}
@@ -437,7 +531,7 @@ export default function AdminOrders() {
 
       {!isLoading && orders.length > 0 && (
         <div className="surface-card mb-6 space-y-4 p-4 md:p-5">
-          <div className="grid gap-4 lg:grid-cols-[minmax(0,1fr)_14rem_auto] lg:items-end">
+          <div className="grid gap-4 lg:grid-cols-[minmax(0,1fr)_14rem_auto_auto] lg:items-end">
             <label className="block">
               <span className="mb-2 block text-xs font-bold uppercase tracking-[0.16em] text-smoke">Cari order</span>
               <input
@@ -472,7 +566,20 @@ export default function AdminOrders() {
             >
               Reset Filter
             </button>
+
+            <button
+              type="button"
+              onClick={handleExportCsv}
+              disabled={visibleOrders.length === 0}
+              className="btn-primary w-full disabled:cursor-not-allowed disabled:opacity-50 md:w-auto"
+              title={visibleOrders.length === 0 ? 'Tidak ada data untuk diexport' : 'Export order yang sedang tampil'}
+            >
+              Export CSV
+            </button>
           </div>
+          <p className="text-xs leading-5 text-smoke">
+            Export mengikuti search dan filter status yang sedang aktif.
+          </p>
         </div>
       )}
 
