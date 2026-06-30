@@ -1,278 +1,229 @@
 # Adzani E-commerce
 
-Adzani E-commerce adalah MVP toko online untuk katalog produk elektronik, aksesoris HP, voucher, dan kebutuhan konter. Aplikasi ini menampilkan produk aktif dari Supabase, menyediakan cart berbasis `localStorage`, checkout ke WhatsApp admin, serta panel admin untuk mengelola produk.
+Adzani E-commerce is a production-ready MVP storefront for an electronics, phone accessories, voucher, and counter-service shop. Customers can browse active products, add items to a local cart, submit a WhatsApp checkout, and have the order recorded in Supabase for admin processing.
 
-## Status MVP
-
-MVP core sudah selesai dan siap masuk tahap push repository serta deploy production.
-
-Yang sudah tersedia:
-
-- Customer landing page yang terhubung ke flow belanja.
-- Katalog produk dari Supabase.
-- Search dan filter kategori.
-- Halaman detail produk.
-- Cart tersimpan di `localStorage`.
-- Checkout WhatsApp dengan format pesan otomatis.
-- Login admin menggunakan Google OAuth Supabase Auth.
-- Protected route untuk area admin.
-- Dashboard admin dengan ringkasan produk.
-- CRUD produk lengkap untuk admin.
-- Toggle produk aktif/nonaktif.
-- Delete produk dengan konfirmasi.
-- SEO basic dan app metadata.
-
-## Fitur Customer
-
-- Landing page untuk memperkenalkan Adzani Store dan alur belanja.
-- Product catalog di `/products`.
-- Search produk berdasarkan nama atau deskripsi.
-- Filter produk berdasarkan kategori.
-- Product detail di `/products/:slug`.
-- Product card dan detail menampilkan harga, kategori, stok, gambar, dan fallback image.
-- Cart berbasis `localStorage`, sehingga customer tidak perlu login.
-- Update quantity, hapus item, dan kosongkan cart.
-- Quantity cart dibatasi sesuai stok produk.
-- Checkout via WhatsApp ke nomor admin dari environment variable.
-
-## Fitur Admin
-
-- Login dengan Google OAuth melalui Supabase Auth.
-- Protected route untuk halaman admin.
-- Dashboard summary:
-  - total produk
-  - produk aktif
-  - produk nonaktif
-  - stok habis
-- Product list untuk semua produk, termasuk produk nonaktif.
-- Create product.
-- Edit product.
-- Toggle active/inactive product.
-- Delete product dengan `window.confirm`.
-- Product form mendukung create dan edit mode.
+> Live demo: `https://your-adzani-demo.vercel.app`
 
 ## Tech Stack
 
-- React 19
-- TypeScript
-- Vite
-- Tailwind CSS v4
-- React Router
-- Supabase JavaScript SDK
-- Supabase Auth Google OAuth
-- Supabase Database
-- Cart `localStorage`
-- WhatsApp checkout link
+| Area | Stack |
+| --- | --- |
+| Frontend | React 19, TypeScript, Vite |
+| Styling | Tailwind CSS v4 |
+| Routing | React Router |
+| Backend | Supabase Database, Auth, Storage, Realtime |
+| Auth | Supabase Google OAuth |
+| Checkout | WhatsApp deep link + Supabase orders |
+| Deployment | Vercel |
+| Local runtime | Node.js, Docker, Docker Compose |
 
-## Struktur Folder Singkat
+## Main Features
 
-```txt
-src/
-  components/
-    auth/              # ProtectedRoute
-    layout/            # Layout dan Navbar
-    product/           # Section shortcut katalog
-    ui/                # Landing page sections dan auth button
-  hooks/
-    useAuth.ts         # Supabase auth state dan OAuth action
-    useCart.ts         # Cart localStorage
-    useProducts.ts     # Load produk aktif
-  lib/
-    formatCurrency.ts  # Format Rupiah
-    slugify.ts         # Helper slug produk
-  pages/
-    Home.tsx
-    Products.tsx
-    ProductDetail.tsx
-    Cart.tsx
-    Login.tsx
-    admin/
-      AdminDashboard.tsx
-      AdminProducts.tsx
-      ProductForm.tsx
-  services/
-    productService.ts
-    supabaseClient.ts
-    whatsappService.ts
-  types/
-    types.ts
-supabase/
-  products.sql         # SQL table products, RLS, policies, sample data
-```
+- Public storefront with homepage, catalog, product detail, and cart.
+- Supabase-backed product data with active/inactive visibility.
+- Cart persistence with `localStorage`.
+- Cart recovery UX for stale product price, stock, inactive, or missing products.
+- WhatsApp checkout with customer name, phone, pickup method, note, and message preview.
+- Orders saved to Supabase before WhatsApp opens.
+- Admin product management.
+- Admin order management with realtime updates, detail drawer, status transitions, audit log, stock sync, and CSV export.
 
-## Routes
+## Public Features
 
-Customer:
+- Homepage with shopping flow and product discovery.
+- Product catalog at `/products`.
+- Product search, category filter, and sorting.
+- Product detail at `/products/:slug`.
+- Stock-aware add to cart.
+- Quantity controls that prevent exceeding product stock.
+- Empty, loading, and error states.
+- Cart page at `/cart` with:
+  - checkout step indicator
+  - order summary
+  - optional customer data
+  - Indonesian phone normalization
+  - WhatsApp message preview
+  - cart refresh/recovery
+  - post-checkout guidance
 
-- `/` landing page
-- `/products` katalog produk
-- `/products/:slug` detail produk
-- `/cart` cart dan checkout WhatsApp
-- `/login` login admin
+## Admin Features
 
-Admin:
+- Google OAuth login through Supabase Auth.
+- Admin route guard using `VITE_ADMIN_EMAILS`.
+- Admin dashboard at `/admin`.
+- Product CRUD at `/admin/products`.
+- Add product at `/admin/products/new`.
+- Edit product at `/admin/products/:id/edit`.
+- Active/inactive product management.
+- Product image storage through Supabase Storage policies.
+- Dashboard summaries for product and order activity.
 
-- `/admin` dashboard admin
-- `/admin/products` manajemen produk
-- `/admin/products/new` tambah produk
-- `/admin/products/:id/edit` edit produk
+## Order Management Features
+
+- Admin orders page at `/admin/orders`.
+- New WhatsApp checkout orders are saved as `pending`.
+- Realtime refresh for order `INSERT`, `UPDATE`, and `DELETE`.
+- Status filter and search by customer, order ID, item name, or phone.
+- Detail drawer with customer data, items, WhatsApp message, stock sync state, and audit timeline.
+- Safer status transitions:
+  - `pending` -> `confirmed`, `cancelled`, `completed`
+  - `confirmed` -> `completed`, `cancelled`
+  - `completed` -> `cancelled`
+  - `cancelled` -> `confirmed`
+- Stock deduct once when order becomes `confirmed` or `completed`.
+- Stock restore once when processed order becomes `cancelled`.
+- Cancelled order can be confirmed again if stock is available.
+- Status audit log records from/to status, admin user, email, and timestamp.
+- CSV export follows the current search/filter view.
+- Customer WhatsApp phone is normalized and linked to `wa.me`.
+
+## Security And RLS Notes
+
+- Do not use a Supabase service role key in the frontend.
+- Frontend uses only Supabase URL and anon/publishable key.
+- Public users can read active products only.
+- Public users can insert checkout orders.
+- Public users cannot browse orders or order status logs.
+- Admin access is enforced in two layers:
+  - frontend admin guard through `VITE_ADMIN_EMAILS`
+  - Supabase RLS and `public.is_admin()`
+- Order status processing is handled by the `process_order_status` RPC.
+- Stock deduct/restore logic is server-side in SQL to avoid double deduct or double restore.
 
 ## Environment Variables
 
-Buat file `.env` dari `.env.example`.
+Create `.env` locally from `.env.example`. Never commit real secrets.
 
 ```env
 VITE_SUPABASE_URL=https://your-project.supabase.co
 VITE_SUPABASE_ANON_KEY=your-supabase-anon-or-publishable-key
 VITE_WHATSAPP_ADMIN=628xxxxxxxxxx
+VITE_ADMIN_EMAILS=admin@example.com
 ```
 
-Catatan keamanan:
+Notes:
 
-- Jangan menulis secret asli di README.
-- Jangan memakai atau mengekspos Supabase service role key di frontend.
-- Frontend hanya membutuhkan Supabase URL, anon key, dan nomor WhatsApp admin.
+- `VITE_WHATSAPP_ADMIN` should use international format without `+`.
+- `VITE_ADMIN_EMAILS` supports comma-separated emails.
+- Keep Supabase service role keys only in secure server-side environments, not in this Vite app.
 
-## Cara Install
+## Local Setup
 
 ```bash
 npm install
-```
-
-## Cara Run Development
-
-```bash
 npm run dev
 ```
 
-Dev server default project berjalan di:
+Development server:
 
 ```txt
 http://localhost:3000
 ```
 
-## Cara Build Production
+Production build:
 
 ```bash
 npm run build
 ```
 
-Untuk preview hasil build:
+Preview build:
 
 ```bash
 npm run preview
 ```
 
-## Supabase Setup Singkat
+## Docker Setup
 
-1. Buat project Supabase baru.
-2. Buka SQL Editor di Supabase.
-3. Jalankan isi file `supabase/products.sql`.
-4. Pastikan table `products` sudah terbuat.
-5. Pastikan RLS aktif.
-6. Pastikan policy public hanya membaca produk aktif.
-7. Pastikan authenticated user bisa insert, update, dan delete produk untuk kebutuhan MVP.
-8. Isi `.env` dengan `VITE_SUPABASE_URL` dan `VITE_SUPABASE_ANON_KEY`.
+Run the Vite development server in Docker:
 
-Table utama:
-
-```txt
-products
-- id
-- name
-- slug
-- description
-- category
-- price
-- cost_price
-- stock
-- image_url
-- is_active
-- created_at
-- updated_at
+```bash
+docker compose up --build
 ```
 
-Behavior data:
-
-- Produk aktif tampil di customer catalog.
-- Produk nonaktif tidak tampil di customer catalog.
-- Produk nonaktif tetap tampil di admin product list.
-- Produk stok `0` tampil sebagai stok habis.
-- Produk stok `0` tidak bisa ditambahkan ke cart.
-
-## Google OAuth Note
-
-Admin login memakai Supabase Google OAuth.
-
-Checklist konfigurasi:
-
-- Enable Google provider di Supabase Auth.
-- Isi Google Client ID dan Client Secret di dashboard Supabase.
-- Tambahkan redirect URL sesuai environment development dan production.
-- Development redirect umumnya mengarah ke `http://localhost:3000/admin`.
-- Saat deploy nanti, tambahkan domain production Vercel ke allowed redirect URLs.
-
-## WhatsApp Checkout
-
-Checkout dibuat dari cart customer dan diarahkan ke:
+Then open:
 
 ```txt
-https://wa.me/<VITE_WHATSAPP_ADMIN>?text=<encoded-order-message>
+http://localhost:3000
 ```
 
-Pesan checkout berisi:
+Make sure the required Vite environment variables are available to Docker through your shell or `.env` file.
 
-- nama produk
-- quantity
-- harga per item
-- subtotal per item
-- total order
-- catatan konfirmasi ketersediaan
+## Supabase Setup
 
-Tidak ada pembayaran otomatis di website pada MVP ini. Admin tetap mengonfirmasi stok dan pembayaran secara manual melalui WhatsApp.
+Run the SQL files in this order from the Supabase SQL Editor:
 
-## Deployment Note untuk Vercel
+1. `supabase/products.sql`
+2. `supabase/storage.sql`
+3. `supabase/orders.sql`
+4. `supabase/order-stock-sync.sql`
+5. `supabase/order-audit-log.sql`
+6. `supabase/order-customer-phone.sql`
 
-Project belum dideploy. Saat siap deploy ke Vercel:
+Important setup notes:
 
-1. Push repository ke GitHub.
-2. Import project ke Vercel.
-3. Set framework preset ke Vite.
-4. Isi environment variables di Vercel:
-   - `VITE_SUPABASE_URL`
-   - `VITE_SUPABASE_ANON_KEY`
-   - `VITE_WHATSAPP_ADMIN`
-5. Pastikan Supabase Auth redirect URL production sudah ditambahkan.
-6. Build command:
+- Replace placeholder admin emails inside SQL helper functions with the same emails used in `VITE_ADMIN_EMAILS`.
+- Enable Google OAuth in Supabase Auth.
+- Add local and production redirect URLs in Supabase Auth settings.
+- Ensure the `product-images` storage bucket exists before using product image upload flows.
+
+## Build Command
 
 ```bash
 npm run build
 ```
 
-7. Output directory:
+The production output directory is:
 
 ```txt
 dist
 ```
 
-## Roadmap After MVP
+## Deployment Notes
 
-- Order database agar checkout tersimpan di Supabase.
-- Status order dan riwayat pesanan.
-- Payment gateway.
-- Ongkir otomatis.
-- Upload gambar produk dari admin.
-- Role admin yang lebih ketat.
-- Dashboard analytics.
-- Promo atau voucher discount.
-- Wishlist.
-- Review produk.
-- Notifikasi order untuk admin.
+Vercel setup:
 
-## Quality Status
+- Framework preset: Vite
+- Build command: `npm run build`
+- Output directory: `dist`
+- Environment variables:
+  - `VITE_SUPABASE_URL`
+  - `VITE_SUPABASE_ANON_KEY`
+  - `VITE_WHATSAPP_ADMIN`
+  - `VITE_ADMIN_EMAILS`
 
-- Final manual QA berbasis PRD MVP sudah dilakukan.
-- Production build berhasil dengan `npm run build`.
-- Source frontend tidak memakai service role key.
-- MVP siap masuk tahap GitHub dan deploy Vercel setelah konfigurasi production siap.
-# Adzani-Ecommers
+This repo includes `vercel.json` SPA rewrites so direct refresh on nested routes works:
+
+```json
+{
+  "rewrites": [
+    {
+      "source": "/(.*)",
+      "destination": "/"
+    }
+  ]
+}
+```
+
+## Current Status
+
+MVP/Phase 2 is production-demo ready:
+
+- Customer storefront is usable.
+- WhatsApp checkout records orders to Supabase.
+- Admin can manage products and orders.
+- Order stock sync is protected by RPC.
+- Status audit log and CSV export are available.
+- Final build and route QA have passed.
+
+Admin live testing still requires a valid Google account listed in `VITE_ADMIN_EMAILS` and in the Supabase `public.is_admin()` helper.
+
+## Roadmap
+
+- Admin order analytics.
+- Printable invoice or receipt view.
+- Order note updates from admin.
+- Better image optimization pipeline.
+- Optional payment gateway integration.
+- Optional shipping/ongkir integration.
+- Customer order tracking page.
+- Automated test coverage for critical checkout and admin flows.
