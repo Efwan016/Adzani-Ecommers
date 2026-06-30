@@ -1,7 +1,7 @@
 import { useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { formatCurrency } from '../lib/formatCurrency';
-import { normalizeIndonesianPhone } from '../lib/phone';
+import { formatPhoneDisplay, normalizeIndonesianPhone } from '../lib/phone';
 import { useCart } from '../hooks/useCart';
 import { getProductsByIds } from '../services/productService';
 import { createOrder } from '../services/orderService';
@@ -24,6 +24,20 @@ function getProductInitials(name: string) {
 function clampQty(value: number, maxQty: number) {
   if (maxQty <= 0) return 1;
   return Math.min(Math.max(1, value), maxQty);
+}
+
+function getCheckoutDisabledReason(options: {
+  hasItems: boolean;
+  isCartInvalid: boolean;
+  isCustomerPhoneTooShort: boolean;
+  isSavingOrder: boolean;
+}) {
+  if (!options.hasItems) return 'Keranjang masih kosong.';
+  if (options.isSavingOrder) return 'Order sedang disimpan.';
+  if (options.isCartInvalid) return 'Perbaiki item yang stoknya bermasalah sebelum checkout.';
+  if (options.isCustomerPhoneTooShort) return 'Nomor WhatsApp terlalu pendek. Kosongkan atau isi nomor yang lebih lengkap.';
+
+  return '';
 }
 
 function ImageFallback({ name }: { name: string }) {
@@ -72,8 +86,17 @@ export default function Cart() {
     ...checkoutInfo,
     customerPhone: normalizedCustomerPhone,
   };
+  const customerName = checkoutInfo.customerName?.trim();
+  const customerPhoneDisplay = formatPhoneDisplay(normalizedCustomerPhone);
+  const pickupMethodLabel = checkoutInfo.pickupMethod?.trim() || 'Belum dipilih';
   const whatsappPreview = items.length > 0 ? generateWhatsAppOrderMessage(items, normalizedCheckoutInfo) : '';
   const isCheckoutDisabled = items.length === 0 || isCartInvalid || isSavingOrder || isCustomerPhoneTooShort;
+  const checkoutDisabledReason = getCheckoutDisabledReason({
+    hasItems: items.length > 0,
+    isCartInvalid,
+    isCustomerPhoneTooShort,
+    isSavingOrder,
+  });
   const shortOrderId = savedOrderId ? savedOrderId.slice(0, 8).toUpperCase() : '';
 
   const markImageAsBroken = (productId: string) => {
@@ -462,12 +485,36 @@ export default function Cart() {
           </div>
 
           <aside className="surface-card h-fit p-5 lg:sticky lg:top-24">
-            <p className="eyebrow">Ringkasan</p>
-            <h2 className="mt-2 text-2xl font-semibold text-porcelain">Order Summary</h2>
+            <div>
+              <p className="eyebrow">Checkout</p>
+              <h2 className="mt-2 text-2xl font-semibold text-porcelain">Selesaikan Order</h2>
+              <p className="mt-2 text-sm leading-6 text-mist">
+                Harga dan stok akan dikonfirmasi kembali oleh admin. Checkout akan membuka WhatsApp.
+              </p>
+            </div>
+
+            <div className="mt-5 grid gap-2 sm:grid-cols-3 lg:grid-cols-1">
+              {[
+                ['1', 'Cek keranjang', isCartInvalid ? 'Perlu dicek' : 'Siap'],
+                ['2', 'Isi data', customerName || customerPhoneDisplay ? 'Terisi opsional' : 'Opsional'],
+                ['3', 'Chat admin', hasOpenedWhatsApp ? 'Sudah dibuka' : 'Lewat WhatsApp'],
+              ].map(([step, label, status]) => (
+                <div key={step} className="flex items-center gap-3 rounded-md border border-white/10 bg-white/5 px-3 py-3">
+                  <span className="grid h-8 w-8 shrink-0 place-items-center rounded-md border border-sage/30 bg-sage/10 text-sm font-black text-sage">
+                    {step}
+                  </span>
+                  <div className="min-w-0">
+                    <p className="text-sm font-semibold text-porcelain">{label}</p>
+                    <p className="mt-0.5 text-xs text-smoke">{status}</p>
+                  </div>
+                </div>
+              ))}
+            </div>
 
             <div className="mt-5 space-y-4 text-sm text-mist">
+              <p className="text-xs font-semibold uppercase tracking-[0.16em] text-smoke">Ringkasan order</p>
               <div className="flex items-center justify-between">
-                <span>Jenis produk</span>
+                <span>Total item</span>
                 <strong className="text-porcelain">{productTypes}</strong>
               </div>
               <div className="flex items-center justify-between">
@@ -475,22 +522,29 @@ export default function Cart() {
                 <strong className="text-porcelain">{totalQty}</strong>
               </div>
               <div className="flex items-center justify-between border-t border-white/10 pt-4">
-                <span>Subtotal</span>
+                <span>Total harga</span>
                 <strong className="text-lg text-porcelain">{formatCurrency(getSubtotal)}</strong>
               </div>
               <div className="flex items-center justify-between">
-                <span>Metode checkout</span>
-                <strong className="text-porcelain">WhatsApp</strong>
+                <span>Metode ambil</span>
+                <strong className="text-right text-porcelain">{pickupMethodLabel}</strong>
+              </div>
+              <div className="flex items-start justify-between gap-4">
+                <span>Nama customer</span>
+                <strong className="text-right text-porcelain">{customerName || '-'}</strong>
+              </div>
+              <div className="flex items-start justify-between gap-4">
+                <span>Nomor WhatsApp</span>
+                <strong className="break-all text-right text-porcelain">{customerPhoneDisplay || '-'}</strong>
               </div>
             </div>
 
             <div className="mt-5 rounded-md border border-sage/20 bg-sage/8 p-4">
               <p className="text-xs font-semibold uppercase tracking-[0.16em] text-sage">Catatan checkout</p>
               <ul className="mt-3 space-y-2 text-sm leading-6 text-mist">
-                <li>Checkout akan diarahkan ke WhatsApp admin.</li>
-                <li>Harga dan stok akan dikonfirmasi ulang oleh admin.</li>
+                <li>Checkout akan membuka WhatsApp admin.</li>
+                <li>Harga dan stok akan dikonfirmasi kembali oleh admin.</li>
                 <li>Keranjang tidak otomatis dikosongkan setelah WhatsApp terbuka.</li>
-                <li>Stok dan harga akan dikonfirmasi admin saat checkout.</li>
                 <li>Keranjang tersimpan di perangkat ini.</li>
                 <li>Keranjang bisa direset saat berganti akun admin.</li>
               </ul>
@@ -516,9 +570,9 @@ export default function Cart() {
 
             <div className="mt-5 space-y-4 rounded-md border border-white/10 bg-white/5 p-4">
               <div>
-                <p className="text-xs font-semibold uppercase tracking-[0.16em] text-smoke">Info tambahan</p>
+                <p className="text-xs font-semibold uppercase tracking-[0.16em] text-smoke">2. Isi data</p>
                 <p className="mt-2 text-sm leading-6 text-mist">
-                  Opsional, tapi membantu admin memproses order lebih cepat.
+                  Semua field opsional, tapi membantu admin memproses order lebih cepat.
                 </p>
               </div>
 
@@ -577,8 +631,11 @@ export default function Cart() {
             </div>
 
             <div className="mt-5 rounded-md border border-white/10 bg-ink/70 p-4">
-              <p className="text-xs font-semibold uppercase tracking-[0.16em] text-smoke">Pesan yang akan dikirim</p>
-              <pre className="mt-3 max-h-72 overflow-auto whitespace-pre-wrap rounded-md bg-white/5 p-3 text-xs leading-6 text-mist">
+              <div className="flex items-center justify-between gap-3">
+                <p className="text-xs font-semibold uppercase tracking-[0.16em] text-smoke">3. Preview WhatsApp</p>
+                <span className="text-xs text-smoke">Scroll untuk cek detail</span>
+              </div>
+              <pre className="mt-3 max-h-44 overflow-auto whitespace-pre-wrap rounded-md bg-white/5 p-3 text-xs leading-6 text-mist sm:max-h-60 lg:max-h-72">
                 {whatsappPreview}
               </pre>
             </div>
@@ -591,6 +648,12 @@ export default function Cart() {
             )}
 
             {errorMessage && <p className="error-panel mt-4 text-sm">{errorMessage}</p>}
+
+            {isCheckoutDisabled && checkoutDisabledReason && (
+              <p className="mt-4 rounded-md border border-champagne/30 bg-champagne/10 px-3 py-2 text-sm leading-6 text-champagne">
+                {checkoutDisabledReason}
+              </p>
+            )}
 
             <button
               type="button"
