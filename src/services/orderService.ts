@@ -1,5 +1,5 @@
 import { supabase } from './supabaseClient';
-import type { CartItem, Order, OrderItem, OrderStatus } from '../types/types';
+import type { CartItem, Order, OrderItem, OrderStatus, OrderStatusLog } from '../types/types';
 import type { CheckoutInfo } from './whatsappService';
 
 export type CreateOrderInput = {
@@ -110,6 +110,24 @@ export async function updateOrderStatus(id: string, status: OrderStatus): Promis
   }
 
   return data as Order;
+}
+
+export async function getOrderStatusLogs(orderId: string): Promise<OrderStatusLog[]> {
+  if (!supabase) {
+    throw new Error('Supabase belum dikonfigurasi. Periksa file .env.');
+  }
+
+  const { data, error } = await supabase
+    .from('order_status_logs')
+    .select('*')
+    .eq('order_id', orderId)
+    .order('created_at', { ascending: false });
+
+  if (error) {
+    throw new Error(error.message);
+  }
+
+  return (data ?? []) as OrderStatusLog[];
 }
 
 export async function deleteOrder(id: string): Promise<void> {

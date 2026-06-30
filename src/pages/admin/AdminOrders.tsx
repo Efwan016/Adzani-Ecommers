@@ -1,9 +1,9 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { formatCurrency } from '../../lib/formatCurrency';
-import { deleteOrder, getOrdersAdmin, updateOrderStatus } from '../../services/orderService';
+import { deleteOrder, getOrdersAdmin, getOrderStatusLogs, updateOrderStatus } from '../../services/orderService';
 import { supabase } from '../../services/supabaseClient';
-import type { Order, OrderStatus } from '../../types/types';
+import type { Order, OrderStatus, OrderStatusLog } from '../../types/types';
 
 type StatusFilter = 'all' | OrderStatus;
 type RealtimeStatus = 'connecting' | 'active' | 'unavailable';
@@ -133,6 +133,9 @@ export default function AdminOrders() {
   const [statusFilter, setStatusFilter] = useState<StatusFilter>('all');
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedOrderId, setSelectedOrderId] = useState<string | null>(null);
+  const [orderStatusLogs, setOrderStatusLogs] = useState<OrderStatusLog[]>([]);
+  const [isLogsLoading, setIsLogsLoading] = useState(false);
+  const [logsError, setLogsError] = useState<string | null>(null);
   const [realtimeStatus, setRealtimeStatus] = useState<RealtimeStatus>('connecting');
   const [realtimeMessage, setRealtimeMessage] = useState('Menghubungkan realtime...');
   const [error, setError] = useState<string | null>(null);
@@ -193,6 +196,21 @@ export default function AdminOrders() {
     }
   }, []);
 
+  const loadOrderStatusLogs = useCallback(async (orderId: string) => {
+    setIsLogsLoading(true);
+    setLogsError(null);
+
+    try {
+      const data = await getOrderStatusLogs(orderId);
+      setOrderStatusLogs(data);
+    } catch (err) {
+      setLogsError(err instanceof Error ? err.message : 'Gagal memuat riwayat status');
+      setOrderStatusLogs([]);
+    } finally {
+      setIsLogsLoading(false);
+    }
+  }, []);
+
   useEffect(() => {
     loadOrders();
   }, [loadOrders]);
@@ -203,6 +221,17 @@ export default function AdminOrders() {
 
     setSelectedOrderId(null);
   }, [orders, selectedOrderId]);
+
+  useEffect(() => {
+    if (!selectedOrderId) {
+      setOrderStatusLogs([]);
+      setLogsError(null);
+      setIsLogsLoading(false);
+      return;
+    }
+
+    void loadOrderStatusLogs(selectedOrderId);
+  }, [loadOrderStatusLogs, selectedOrderId]);
 
   useEffect(() => {
     const client = supabase;
@@ -280,6 +309,9 @@ export default function AdminOrders() {
             ? ' Stok produk sudah dikembalikan.'
           : '';
       setFeedbackMessage(`Order #${getShortOrderId(updatedOrder.id)} berhasil diubah ke ${updatedOrder.status}.${stockSyncMessage}`);
+      if (selectedOrderId === updatedOrder.id) {
+        void loadOrderStatusLogs(updatedOrder.id);
+      }
     } catch (err) {
       setError(getOrderActionErrorMessage(err));
     } finally {
@@ -671,6 +703,66 @@ export default function AdminOrders() {
                   <p className="mt-3 rounded-md border border-champagne/30 bg-champagne/10 px-3 py-2 text-sm leading-6 text-champagne">
                     {getStatusWarning(selectedOrder.status)}
                   </p>
+                )}
+              </div>
+
+              <div className="rounded-md border border-white/10 bg-white/5 p-4">
+                <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+                  <div>
+                    <p className="text-xs font-semibold uppercase tracking-[0.14em] text-smoke">Riwayat Status</p>
+                    <p className="mt-1 text-sm text-mist">Histori perubahan status yang diproses lewat RPC admin.</p>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => loadOrderStatusLogs(selectedOrder.id)}
+                    disabled={isLogsLoading}
+                    className="btn-secondary px-3 py-2 text-xs disabled:cursor-not-allowed disabled:opacity-50"
+                  >
+                    {isLogsLoading ? 'Memuat...' : 'Refresh Log'}
+                  </button>
+                </div>
+
+                {isLogsLoading && (
+                  <div className="mt-4 rounded-md border border-white/10 bg-white/5 px-3 py-3 text-sm text-smoke">
+                    Memuat riwayat status...
+                  </div>
+                )}
+
+                {!isLogsLoading && logsError && (
+                  <div className="mt-4 rounded-md border border-blush/30 bg-blush/10 px-3 py-3 text-sm leading-6 text-blush">
+                    {logsError}
+                  </div>
+                )}
+
+                {!isLogsLoading && !logsError && orderStatusLogs.length === 0 && (
+                  <div className="mt-4 rounded-md border border-dashed border-white/15 bg-white/5 px-3 py-3 text-sm leading-6 text-smoke">
+                    Belum ada riwayat perubahan status untuk order ini.
+                  </div>
+                )}
+
+                {!isLogsLoading && !logsError && orderStatusLogs.length > 0 && (
+                  <div className="mt-4 space-y-3">
+                    {orderStatusLogs.map((log) => (
+                      <div key={log.id} className="rounded-md border border-white/10 bg-ink/40 p-3">
+                        <div className="flex flex-wrap items-center gap-2">
+                          {log.from_status ? (
+                            <StatusBadge status={log.from_status} />
+                          ) : (
+                            <span className="status-pill bg-white/8 text-smoke">Awal</span>
+                          )}
+                          <span className="text-sm font-semibold text-smoke">→</span>
+                          <StatusBadge status={log.to_status} />
+                        </div>
+                        <div className="mt-3 grid gap-1 text-sm text-mist sm:grid-cols-[1fr_auto] sm:items-center">
+                          <span className="break-all">
+                            Oleh: <strong className="text-porcelain">{log.changed_by_email || 'Admin'}</strong>
+                          </span>
+                          <span className="text-smoke">{formatDateTime(log.created_at)}</span>
+                        </div>
+                        {log.note && <p className="mt-2 text-sm leading-6 text-smoke">{log.note}</p>}
+                      </div>
+                    ))}
+                  </div>
                 )}
               </div>
 

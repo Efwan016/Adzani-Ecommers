@@ -47,3 +47,14 @@ export type Order = {
   created_at: string;
   updated_at: string;
 };
+
+export type OrderStatusLog = {
+  id: string;
+  order_id: string;
+  from_status: OrderStatus | null;
+  to_status: OrderStatus;
+  changed_by: string | null;
+  changed_by_email: string | null;
+  note: string | null;
+  created_at: string;
+};
