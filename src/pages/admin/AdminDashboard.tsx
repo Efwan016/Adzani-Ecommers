@@ -65,6 +65,19 @@ function StatusBadge({ status }: { status: OrderStatus }) {
   return <span className={`status-pill ${statusTone[status]}`}>{status}</span>;
 }
 
+function StockSyncBadge({ order }: { order: Order }) {
+  return (
+    <span className={`inline-flex w-fit rounded-full border px-2.5 py-1 text-[0.68rem] font-bold uppercase tracking-[0.12em] ${
+      order.stock_deducted
+        ? 'border-sage/30 bg-sage/10 text-sage'
+        : 'border-champagne/30 bg-champagne/10 text-champagne'
+    }`}
+    >
+      {order.stock_deducted ? 'Stok sync' : 'Stok belum sync'}
+    </span>
+  );
+}
+
 export default function AdminDashboard() {
   const { user, logout } = useAuth();
   const [products, setProducts] = useState<Product[]>([]);
@@ -281,6 +294,7 @@ export default function AdminDashboard() {
                       <div className="flex flex-wrap items-center gap-2">
                         <p className="font-semibold text-porcelain">#{getShortOrderId(order.id)}</p>
                         <StatusBadge status={order.status} />
+                        <StockSyncBadge order={order} />
                       </div>
                       <p className="mt-2 text-sm font-semibold text-mist">{getCustomerLabel(order)}</p>
                       <p className="mt-1 text-xs text-smoke">{formatDateTime(order.created_at)}</p>

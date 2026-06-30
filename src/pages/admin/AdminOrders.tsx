@@ -29,6 +29,19 @@ function StatusBadge({ status }: { status: OrderStatus }) {
   return <span className={`status-pill ${statusTone[status]}`}>{status}</span>;
 }
 
+function StockSyncBadge({ order }: { order: Order }) {
+  return (
+    <span className={`inline-flex w-fit rounded-full border px-2.5 py-1 text-[0.68rem] font-bold uppercase tracking-[0.12em] ${
+      order.stock_deducted
+        ? 'border-sage/30 bg-sage/10 text-sage'
+        : 'border-champagne/30 bg-champagne/10 text-champagne'
+    }`}
+    >
+      {order.stock_deducted ? 'Stok sudah dikurangi' : 'Stok belum dikurangi'}
+    </span>
+  );
+}
+
 function formatDateTime(value: string) {
   return new Intl.DateTimeFormat('id-ID', {
     dateStyle: 'medium',
@@ -42,6 +55,16 @@ function getShortOrderId(id: string) {
 
 function getCustomerLabel(order: Order) {
   return order.customer_name?.trim() || 'Customer WhatsApp';
+}
+
+function getOrderActionErrorMessage(error: unknown) {
+  const message = error instanceof Error ? error.message : 'Gagal mengubah status order';
+
+  if (message.toLowerCase().includes('stok tidak cukup')) {
+    return `Stok produk tidak cukup. ${message}`;
+  }
+
+  return message;
 }
 
 function OrderItems({ order }: { order: Order }) {
@@ -214,9 +237,13 @@ export default function AdminOrders() {
           currentOrder.id === updatedOrder.id ? updatedOrder : currentOrder,
         ),
       );
-      setFeedbackMessage(`Order #${getShortOrderId(updatedOrder.id)} berhasil diubah ke ${updatedOrder.status}.`);
+      const stockSyncMessage =
+        (status === 'confirmed' || status === 'completed') && updatedOrder.stock_deducted
+          ? ' Stok produk sudah dikurangi.'
+          : '';
+      setFeedbackMessage(`Order #${getShortOrderId(updatedOrder.id)} berhasil diubah ke ${updatedOrder.status}.${stockSyncMessage}`);
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Gagal mengubah status order');
+      setError(getOrderActionErrorMessage(err));
     } finally {
       setBusyOrderId(null);
     }
@@ -424,6 +451,9 @@ export default function AdminOrders() {
                         <td className="min-w-44 px-4 py-4">
                           <p className="font-semibold text-porcelain">#{getShortOrderId(order.id)}</p>
                           <p className="mt-1 text-xs text-smoke">{formatDateTime(order.created_at)}</p>
+                          <div className="mt-2">
+                            <StockSyncBadge order={order} />
+                          </div>
                         </td>
                         <td className="min-w-56 px-4 py-4">
                           <p className="font-semibold text-porcelain">{getCustomerLabel(order)}</p>
@@ -487,6 +517,9 @@ export default function AdminOrders() {
                       <p className="text-xs font-semibold uppercase tracking-[0.16em] text-smoke">#{getShortOrderId(order.id)}</p>
                       <h3 className="mt-1 text-xl font-semibold leading-snug text-porcelain">{getCustomerLabel(order)}</h3>
                       <p className="mt-1 text-xs text-smoke">{formatDateTime(order.created_at)}</p>
+                      <div className="mt-2">
+                        <StockSyncBadge order={order} />
+                      </div>
                     </div>
                     <StatusBadge status={order.status} />
                   </div>
@@ -580,11 +613,27 @@ export default function AdminOrders() {
 
               <div className="mt-4 flex flex-wrap items-center gap-3">
                 <StatusBadge status={selectedOrder.status} />
+                <StockSyncBadge order={selectedOrder} />
                 <span className="text-sm font-semibold text-sage">{formatCurrency(selectedOrder.total)}</span>
               </div>
             </div>
 
             <div className="flex-1 space-y-5 overflow-y-auto p-5">
+              <div className="rounded-md border border-white/10 bg-white/5 p-4">
+                <p className="text-xs font-semibold uppercase tracking-[0.14em] text-smoke">Sinkronisasi stok</p>
+                <div className="mt-3 flex flex-wrap items-center gap-3">
+                  <StockSyncBadge order={selectedOrder} />
+                  {selectedOrder.stock_deducted_at && (
+                    <span className="text-sm text-mist">
+                      Dikurangi pada {formatDateTime(selectedOrder.stock_deducted_at)}
+                    </span>
+                  )}
+                </div>
+                <p className="mt-3 text-sm leading-6 text-mist">
+                  Stok produk otomatis dikurangi saat order masuk ke status confirmed atau completed. Setelah stok dikurangi, perubahan status berikutnya tidak mengurangi stok lagi.
+                </p>
+              </div>
+
               <div className="grid gap-3 sm:grid-cols-2">
                 <div className="surface-muted p-4">
                   <p className="text-xs font-semibold uppercase tracking-[0.14em] text-smoke">Customer</p>
