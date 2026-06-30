@@ -96,14 +96,17 @@ export async function updateOrderStatus(id: string, status: OrderStatus): Promis
   }
 
   const { data, error } = await supabase
-    .from('orders')
-    .update({ status })
-    .eq('id', id)
-    .select('*')
-    .single();
+    .rpc('process_order_status', {
+      order_id: id,
+      next_status: status,
+    });
 
   if (error) {
     throw new Error(error.message);
+  }
+
+  if (!data) {
+    throw new Error('Status order gagal diperbarui.');
   }
 
   return data as Order;

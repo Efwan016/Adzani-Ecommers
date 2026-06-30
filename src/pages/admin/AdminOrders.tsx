@@ -2,9 +2,11 @@ import { useCallback, useEffect, useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { formatCurrency } from '../../lib/formatCurrency';
 import { deleteOrder, getOrdersAdmin, updateOrderStatus } from '../../services/orderService';
+import { supabase } from '../../services/supabaseClient';
 import type { Order, OrderStatus } from '../../types/types';
 
 type StatusFilter = 'all' | OrderStatus;
+type RealtimeStatus = 'connecting' | 'active' | 'unavailable';
 
 const statusOptions: Array<{ value: StatusFilter; label: string }> = [
   { value: 'all', label: 'Semua' },
@@ -22,6 +24,10 @@ const statusTone: Record<OrderStatus, string> = {
   completed: 'bg-porcelain/12 text-porcelain',
   cancelled: 'bg-blush/12 text-blush',
 };
+
+function StatusBadge({ status }: { status: OrderStatus }) {
+  return <span className={`status-pill ${statusTone[status]}`}>{status}</span>;
+}
 
 function formatDateTime(value: string) {
   return new Intl.DateTimeFormat('id-ID', {
@@ -62,9 +68,14 @@ function OrderItems({ order }: { order: Order }) {
 export default function AdminOrders() {
   const [orders, setOrders] = useState<Order[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [isReloading, setIsReloading] = useState(false);
   const [busyOrderId, setBusyOrderId] = useState<string | null>(null);
   const [deletingOrderId, setDeletingOrderId] = useState<string | null>(null);
   const [statusFilter, setStatusFilter] = useState<StatusFilter>('all');
+  const [searchQuery, setSearchQuery] = useState('');
+  const [selectedOrderId, setSelectedOrderId] = useState<string | null>(null);
+  const [realtimeStatus, setRealtimeStatus] = useState<RealtimeStatus>('connecting');
+  const [realtimeMessage, setRealtimeMessage] = useState('Menghubungkan realtime...');
   const [error, setError] = useState<string | null>(null);
   const [feedbackMessage, setFeedbackMessage] = useState('');
 
@@ -74,16 +85,39 @@ export default function AdminOrders() {
       pending: orders.filter((order) => order.status === 'pending').length,
       confirmed: orders.filter((order) => order.status === 'confirmed').length,
       completed: orders.filter((order) => order.status === 'completed').length,
+      cancelled: orders.filter((order) => order.status === 'cancelled').length,
     };
   }, [orders]);
 
-  const visibleOrders = useMemo(() => {
-    if (statusFilter === 'all') return orders;
-    return orders.filter((order) => order.status === statusFilter);
-  }, [orders, statusFilter]);
+  const selectedOrder = useMemo(() => {
+    if (!selectedOrderId) return null;
+    return orders.find((order) => order.id === selectedOrderId) ?? null;
+  }, [orders, selectedOrderId]);
 
-  const loadOrders = useCallback(async () => {
-    setIsLoading(true);
+  const visibleOrders = useMemo(() => {
+    const query = searchQuery.trim().toLowerCase();
+
+    return orders.filter((order) => {
+      const matchesStatus = statusFilter === 'all' || order.status === statusFilter;
+      const matchesSearch =
+        !query ||
+        getCustomerLabel(order).toLowerCase().includes(query) ||
+        order.id.toLowerCase().includes(query) ||
+        getShortOrderId(order.id).toLowerCase().includes(query) ||
+        order.items.some((item) => item.name.toLowerCase().includes(query));
+
+      return matchesStatus && matchesSearch;
+    });
+  }, [orders, searchQuery, statusFilter]);
+
+  const hasActiveFilters = statusFilter !== 'all' || searchQuery.trim() !== '';
+
+  const loadOrders = useCallback(async (options: { silent?: boolean } = {}) => {
+    if (options.silent) {
+      setIsReloading(true);
+    } else {
+      setIsLoading(true);
+    }
     setError(null);
 
     try {
@@ -92,12 +126,78 @@ export default function AdminOrders() {
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Gagal memuat order admin');
     } finally {
-      setIsLoading(false);
+      if (options.silent) {
+        setIsReloading(false);
+      } else {
+        setIsLoading(false);
+      }
     }
   }, []);
 
   useEffect(() => {
     loadOrders();
+  }, [loadOrders]);
+
+  useEffect(() => {
+    if (!selectedOrderId) return;
+    if (orders.some((order) => order.id === selectedOrderId)) return;
+
+    setSelectedOrderId(null);
+  }, [orders, selectedOrderId]);
+
+  useEffect(() => {
+    const client = supabase;
+
+    if (!client) {
+      setRealtimeStatus('unavailable');
+      setRealtimeMessage('Realtime tidak aktif');
+      return;
+    }
+
+    let isMounted = true;
+    const handleRealtimeChange = (eventLabel: string) => {
+      if (!isMounted) return;
+
+      setRealtimeMessage(eventLabel);
+      void loadOrders({ silent: true });
+    };
+
+    const channel = client
+      .channel('admin-orders-realtime')
+      .on(
+        'postgres_changes',
+        { event: 'INSERT', schema: 'public', table: 'orders' },
+        () => handleRealtimeChange('Order baru masuk'),
+      )
+      .on(
+        'postgres_changes',
+        { event: 'UPDATE', schema: 'public', table: 'orders' },
+        () => handleRealtimeChange('Order diperbarui'),
+      )
+      .on(
+        'postgres_changes',
+        { event: 'DELETE', schema: 'public', table: 'orders' },
+        () => handleRealtimeChange('Order dihapus'),
+      )
+      .subscribe((status) => {
+        if (!isMounted) return;
+
+        if (status === 'SUBSCRIBED') {
+          setRealtimeStatus('active');
+          setRealtimeMessage('Realtime aktif');
+          return;
+        }
+
+        if (status === 'CHANNEL_ERROR' || status === 'TIMED_OUT' || status === 'CLOSED') {
+          setRealtimeStatus('unavailable');
+          setRealtimeMessage('Realtime tidak aktif, gunakan Muat ulang');
+        }
+      });
+
+    return () => {
+      isMounted = false;
+      void client.removeChannel(channel);
+    };
   }, [loadOrders]);
 
   const handleUpdateStatus = async (order: Order, status: OrderStatus) => {
@@ -141,7 +241,10 @@ export default function AdminOrders() {
     }
   };
 
-  const resetFilter = () => setStatusFilter('all');
+  const resetFilters = () => {
+    setStatusFilter('all');
+    setSearchQuery('');
+  };
 
   return (
     <section className="page-shell">
@@ -156,13 +259,21 @@ export default function AdminOrders() {
           </div>
 
           <div className="flex flex-wrap items-center gap-3">
+            <button
+              type="button"
+              onClick={() => loadOrders()}
+              disabled={isLoading || isReloading}
+              className="btn-secondary disabled:cursor-not-allowed disabled:opacity-50"
+            >
+              {isReloading ? 'Memuat...' : 'Muat ulang'}
+            </button>
             <Link to="/admin" className="btn-secondary">Dashboard</Link>
             <Link to="/admin/products" className="btn-secondary">Produk</Link>
           </div>
         </div>
       </div>
 
-      <div className="mb-6 grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
+      <div className="mb-6 grid gap-3 sm:grid-cols-2 xl:grid-cols-5">
         <div className="surface-muted px-4 py-4">
           <p className="text-3xl font-semibold text-porcelain">{stats.total}</p>
           <p className="mt-1 text-xs font-semibold uppercase tracking-[0.14em] text-smoke">Total order</p>
@@ -179,12 +290,27 @@ export default function AdminOrders() {
           <p className="text-3xl font-semibold text-porcelain">{stats.completed}</p>
           <p className="mt-1 text-xs font-semibold uppercase tracking-[0.14em] text-smoke">Completed</p>
         </div>
+        <div className="surface-muted px-4 py-4 sm:col-span-2 xl:col-span-1">
+          <p className="text-3xl font-semibold text-blush">{stats.cancelled}</p>
+          <p className="mt-1 text-xs font-semibold uppercase tracking-[0.14em] text-smoke">Cancelled</p>
+        </div>
       </div>
 
       <div className="mb-5 flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
         <div>
           <p className="eyebrow">Daftar order</p>
           <h2 className="section-title">Order Terbaru</h2>
+          <div className="mt-3 flex flex-wrap items-center gap-2 text-xs font-semibold uppercase tracking-[0.14em]">
+            <span
+              className={`inline-flex h-2.5 w-2.5 rounded-full ${
+                realtimeStatus === 'active' ? 'bg-sage' : realtimeStatus === 'connecting' ? 'bg-champagne' : 'bg-blush'
+              }`}
+            />
+            <span className={realtimeStatus === 'active' ? 'text-sage' : realtimeStatus === 'connecting' ? 'text-champagne' : 'text-blush'}>
+              {realtimeMessage}
+            </span>
+            {isReloading && <span className="text-smoke">Sinkronisasi...</span>}
+          </div>
         </div>
         {!isLoading && orders.length > 0 && (
           <p className="text-sm text-smoke">
@@ -206,7 +332,7 @@ export default function AdminOrders() {
         <div className="error-panel mb-4">
           <p className="font-semibold text-porcelain">Aksi order gagal.</p>
           <p className="mt-1 text-sm">{error}</p>
-          <button type="button" onClick={loadOrders} className="btn-secondary mt-4">
+          <button type="button" onClick={() => loadOrders()} className="btn-secondary mt-4">
             Muat Ulang Order
           </button>
         </div>
@@ -214,7 +340,18 @@ export default function AdminOrders() {
 
       {!isLoading && orders.length > 0 && (
         <div className="surface-card mb-6 space-y-4 p-4 md:p-5">
-          <div className="grid gap-4 md:grid-cols-[1fr_auto] md:items-end">
+          <div className="grid gap-4 lg:grid-cols-[minmax(0,1fr)_14rem_auto] lg:items-end">
+            <label className="block">
+              <span className="mb-2 block text-xs font-bold uppercase tracking-[0.16em] text-smoke">Cari order</span>
+              <input
+                type="search"
+                value={searchQuery}
+                onChange={(event) => setSearchQuery(event.target.value)}
+                placeholder="Customer, order ID, atau nama item"
+                className="field-control min-h-12 text-base"
+              />
+            </label>
+
             <label className="block">
               <span className="mb-2 block text-xs font-bold uppercase tracking-[0.16em] text-smoke">Filter status</span>
               <select
@@ -232,8 +369,8 @@ export default function AdminOrders() {
 
             <button
               type="button"
-              onClick={resetFilter}
-              disabled={statusFilter === 'all'}
+              onClick={resetFilters}
+              disabled={!hasActiveFilters}
               className="btn-secondary w-full disabled:cursor-not-allowed disabled:opacity-50 md:w-auto"
             >
               Reset Filter
@@ -253,11 +390,11 @@ export default function AdminOrders() {
 
       {!isLoading && !error && orders.length > 0 && visibleOrders.length === 0 && (
         <div className="state-panel border-dashed p-10 text-center">
-          <p className="text-xl font-semibold text-porcelain">Tidak ada order dengan status ini.</p>
+          <p className="text-xl font-semibold text-porcelain">Tidak ada order yang cocok.</p>
           <p className="mx-auto mt-2 max-w-md text-sm leading-6 text-smoke">
-            Ubah filter status untuk melihat order lainnya.
+            Ubah kata kunci atau filter status untuk melihat order lainnya.
           </p>
-          <button type="button" onClick={resetFilter} className="btn-secondary mt-5">
+          <button type="button" onClick={resetFilters} className="btn-secondary mt-5">
             Reset Filter
           </button>
         </div>
@@ -298,10 +435,17 @@ export default function AdminOrders() {
                         </td>
                         <td className="px-4 py-4 font-semibold text-sage">{formatCurrency(order.total)}</td>
                         <td className="px-4 py-4">
-                          <span className={`status-pill ${statusTone[order.status]}`}>{order.status}</span>
+                          <StatusBadge status={order.status} />
                         </td>
                         <td className="px-4 py-4">
                           <div className="grid min-w-48 gap-2">
+                            <button
+                              type="button"
+                              onClick={() => setSelectedOrderId(order.id)}
+                              className="btn-secondary px-3 py-2 text-xs"
+                            >
+                              Detail
+                            </button>
                             <select
                               value={order.status}
                               onChange={(event) => handleUpdateStatus(order, event.target.value as OrderStatus)}
@@ -344,7 +488,7 @@ export default function AdminOrders() {
                       <h3 className="mt-1 text-xl font-semibold leading-snug text-porcelain">{getCustomerLabel(order)}</h3>
                       <p className="mt-1 text-xs text-smoke">{formatDateTime(order.created_at)}</p>
                     </div>
-                    <span className={`status-pill w-fit ${statusTone[order.status]}`}>{order.status}</span>
+                    <StatusBadge status={order.status} />
                   </div>
 
                   <div className="mt-4 grid gap-3 sm:grid-cols-2">
@@ -371,6 +515,13 @@ export default function AdminOrders() {
                   </div>
 
                   <div className="mt-4 grid gap-2">
+                    <button
+                      type="button"
+                      onClick={() => setSelectedOrderId(order.id)}
+                      className="btn-secondary w-full py-3"
+                    >
+                      Detail Order
+                    </button>
                     <select
                       value={order.status}
                       onChange={(event) => handleUpdateStatus(order, event.target.value as OrderStatus)}
@@ -397,6 +548,96 @@ export default function AdminOrders() {
             })}
           </div>
         </>
+      )}
+
+      {selectedOrder && (
+        <div className="fixed inset-0 z-50 flex justify-end bg-ink/75 backdrop-blur-sm" role="dialog" aria-modal="true" aria-labelledby="order-detail-title">
+          <button
+            type="button"
+            aria-label="Tutup detail order"
+            onClick={() => setSelectedOrderId(null)}
+            className="absolute inset-0 cursor-default"
+          />
+
+          <aside className="relative flex h-full w-full max-w-2xl flex-col overflow-hidden border-l border-white/10 bg-charcoal shadow-2xl sm:m-4 sm:h-[calc(100%-2rem)] sm:rounded-lg sm:border">
+            <div className="border-b border-white/10 p-5">
+              <div className="flex items-start justify-between gap-4">
+                <div>
+                  <p className="eyebrow">Detail Order</p>
+                  <h2 id="order-detail-title" className="mt-2 text-2xl font-semibold text-porcelain">
+                    #{getShortOrderId(selectedOrder.id)}
+                  </h2>
+                  <p className="mt-2 text-sm text-smoke">{formatDateTime(selectedOrder.created_at)}</p>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => setSelectedOrderId(null)}
+                  className="rounded-md border border-white/10 bg-white/6 px-3 py-2 text-sm font-semibold text-porcelain hover:bg-white/10"
+                >
+                  Tutup
+                </button>
+              </div>
+
+              <div className="mt-4 flex flex-wrap items-center gap-3">
+                <StatusBadge status={selectedOrder.status} />
+                <span className="text-sm font-semibold text-sage">{formatCurrency(selectedOrder.total)}</span>
+              </div>
+            </div>
+
+            <div className="flex-1 space-y-5 overflow-y-auto p-5">
+              <div className="grid gap-3 sm:grid-cols-2">
+                <div className="surface-muted p-4">
+                  <p className="text-xs font-semibold uppercase tracking-[0.14em] text-smoke">Customer</p>
+                  <p className="mt-2 font-semibold text-porcelain">{getCustomerLabel(selectedOrder)}</p>
+                </div>
+                <div className="surface-muted p-4">
+                  <p className="text-xs font-semibold uppercase tracking-[0.14em] text-smoke">Metode ambil</p>
+                  <p className="mt-2 font-semibold text-porcelain">{selectedOrder.pickup_method || '-'}</p>
+                </div>
+              </div>
+
+              <div className="surface-muted p-4">
+                <p className="text-xs font-semibold uppercase tracking-[0.14em] text-smoke">Catatan customer</p>
+                <p className="mt-2 whitespace-pre-wrap text-sm leading-6 text-mist">{selectedOrder.customer_note || '-'}</p>
+              </div>
+
+              <div>
+                <div className="mb-3 flex items-center justify-between gap-3">
+                  <p className="text-xs font-semibold uppercase tracking-[0.14em] text-smoke">Items lengkap</p>
+                  <p className="text-sm font-semibold text-sage">{formatCurrency(selectedOrder.total)}</p>
+                </div>
+                <div className="space-y-3">
+                  {selectedOrder.items.map((item) => (
+                    <div key={`${selectedOrder.id}-detail-${item.product_id}`} className="rounded-md border border-white/10 bg-white/5 p-4">
+                      <div className="flex flex-col gap-2 sm:flex-row sm:items-start sm:justify-between">
+                        <div className="min-w-0">
+                          <p className="font-semibold text-porcelain">{item.name}</p>
+                          <p className="mt-1 break-all text-xs text-smoke">{item.slug}</p>
+                          <p className="mt-1 text-xs text-smoke">{item.category}</p>
+                        </div>
+                        <p className="text-sm font-semibold text-sage">{formatCurrency(item.subtotal)}</p>
+                      </div>
+                      <div className="mt-3 grid gap-2 text-sm text-mist sm:grid-cols-3">
+                        <span>Qty: <strong className="text-porcelain">{item.qty}</strong></span>
+                        <span>Harga: <strong className="text-porcelain">{formatCurrency(item.price)}</strong></span>
+                        <span className="break-all">ID: <strong className="text-porcelain">{item.product_id}</strong></span>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+              {selectedOrder.whatsapp_message && (
+                <div className="rounded-md border border-white/10 bg-ink/70 p-4">
+                  <p className="text-xs font-semibold uppercase tracking-[0.14em] text-smoke">WhatsApp message</p>
+                  <pre className="mt-3 max-h-72 overflow-auto whitespace-pre-wrap rounded-md bg-white/5 p-3 text-xs leading-6 text-mist">
+                    {selectedOrder.whatsapp_message}
+                  </pre>
+                </div>
+              )}
+            </div>
+          </aside>
+        </div>
       )}
     </section>
   );

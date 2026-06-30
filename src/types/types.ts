@@ -40,6 +40,8 @@ export type Order = {
   total: number;
   status: OrderStatus;
   whatsapp_message: string | null;
+  stock_deducted?: boolean;
+  stock_deducted_at?: string | null;
   created_at: string;
   updated_at: string;
 };
