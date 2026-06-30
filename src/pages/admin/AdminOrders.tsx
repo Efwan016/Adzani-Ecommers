@@ -16,14 +16,42 @@ const statusOptions: Array<{ value: StatusFilter; label: string }> = [
   { value: 'cancelled', label: 'Cancelled' },
 ];
 
-const orderStatusOptions: OrderStatus[] = ['pending', 'confirmed', 'completed', 'cancelled'];
-
 const statusTone: Record<OrderStatus, string> = {
   pending: 'bg-champagne/12 text-champagne',
   confirmed: 'bg-sage/12 text-sage',
   completed: 'bg-porcelain/12 text-porcelain',
   cancelled: 'bg-blush/12 text-blush',
 };
+
+const statusLabels: Record<OrderStatus, string> = {
+  pending: 'Pending',
+  confirmed: 'Confirmed',
+  completed: 'Completed',
+  cancelled: 'Cancelled',
+};
+
+function getAllowedStatusTransitions(currentStatus: OrderStatus): OrderStatus[] {
+  if (currentStatus === 'pending') return ['confirmed', 'cancelled', 'completed'];
+  if (currentStatus === 'confirmed') return ['completed', 'cancelled'];
+  if (currentStatus === 'completed') return ['cancelled'];
+  return ['confirmed'];
+}
+
+function getStatusSelectOptions(currentStatus: OrderStatus): OrderStatus[] {
+  return [currentStatus, ...getAllowedStatusTransitions(currentStatus)];
+}
+
+function getStatusWarning(status: OrderStatus) {
+  if (status === 'completed') {
+    return 'Order selesai. Cancel akan mengembalikan stok jika sebelumnya sudah dikurangi.';
+  }
+
+  if (status === 'cancelled') {
+    return 'Order dibatalkan. Confirm ulang akan mengurangi stok lagi jika stok tersedia.';
+  }
+
+  return '';
+}
 
 function StatusBadge({ status }: { status: OrderStatus }) {
   return <span className={`status-pill ${statusTone[status]}`}>{status}</span>;
@@ -455,6 +483,7 @@ export default function AdminOrders() {
                 <tbody>
                   {visibleOrders.map((order) => {
                     const isBusy = busyOrderId === order.id || deletingOrderId === order.id;
+                    const allowedStatusOptions = getStatusSelectOptions(order.status);
 
                     return (
                       <tr key={order.id} className="border-t border-white/10 align-top hover:bg-white/4">
@@ -492,9 +521,9 @@ export default function AdminOrders() {
                               disabled={isBusy}
                               className="field-control min-h-11 text-sm disabled:cursor-not-allowed disabled:opacity-55"
                             >
-                              {orderStatusOptions.map((status) => (
+                              {allowedStatusOptions.map((status) => (
                                 <option key={status} value={status}>
-                                  {status}
+                                  {statusLabels[status]}
                                 </option>
                               ))}
                             </select>
@@ -519,6 +548,7 @@ export default function AdminOrders() {
           <div className="space-y-4 xl:hidden">
             {visibleOrders.map((order) => {
               const isBusy = busyOrderId === order.id || deletingOrderId === order.id;
+              const allowedStatusOptions = getStatusSelectOptions(order.status);
 
               return (
                 <article key={order.id} className="surface-card p-4">
@@ -571,9 +601,9 @@ export default function AdminOrders() {
                       disabled={isBusy}
                       className="field-control min-h-12 text-base disabled:cursor-not-allowed disabled:opacity-55"
                     >
-                      {orderStatusOptions.map((status) => (
+                      {allowedStatusOptions.map((status) => (
                         <option key={status} value={status}>
-                          {status}
+                          {statusLabels[status]}
                         </option>
                       ))}
                     </select>
@@ -629,6 +659,21 @@ export default function AdminOrders() {
             </div>
 
             <div className="flex-1 space-y-5 overflow-y-auto p-5">
+              <div className="rounded-md border border-white/10 bg-white/5 p-4">
+                <p className="text-xs font-semibold uppercase tracking-[0.14em] text-smoke">Transisi status</p>
+                <p className="mt-2 text-sm leading-6 text-mist">
+                  Status berikutnya yang tersedia: {' '}
+                  <span className="font-semibold text-porcelain">
+                    {getAllowedStatusTransitions(selectedOrder.status).map((status) => statusLabels[status]).join(', ')}
+                  </span>
+                </p>
+                {getStatusWarning(selectedOrder.status) && (
+                  <p className="mt-3 rounded-md border border-champagne/30 bg-champagne/10 px-3 py-2 text-sm leading-6 text-champagne">
+                    {getStatusWarning(selectedOrder.status)}
+                  </p>
+                )}
+              </div>
+
               <div className="rounded-md border border-white/10 bg-white/5 p-4">
                 <p className="text-xs font-semibold uppercase tracking-[0.14em] text-smoke">Sinkronisasi stok</p>
                 <div className="mt-3 flex flex-wrap items-center gap-3">
