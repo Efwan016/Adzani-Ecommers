@@ -19,6 +19,12 @@ export function formatPhoneDisplay(input?: string | null) {
   return normalized;
 }
 
+export function isIndonesianPhoneTooShort(input?: string | null) {
+  const normalized = normalizeIndonesianPhone(input);
+
+  return normalized.length > 0 && normalized.length < 10;
+}
+
 export function getWhatsAppChatUrl(input?: string | null) {
   const normalized = normalizeIndonesianPhone(input);
 

@@ -1,7 +1,7 @@
 import { useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { formatCurrency } from '../lib/formatCurrency';
-import { formatPhoneDisplay, normalizeIndonesianPhone } from '../lib/phone';
+import { formatPhoneDisplay, isIndonesianPhoneTooShort, normalizeIndonesianPhone } from '../lib/phone';
 import { useCart } from '../hooks/useCart';
 import { getProductsByIds } from '../services/productService';
 import { createOrder } from '../services/orderService';
@@ -81,7 +81,7 @@ export default function Cart() {
   }, [items, unavailableProductIds]);
   const isCartInvalid = invalidItems.length > 0;
   const normalizedCustomerPhone = normalizeIndonesianPhone(checkoutInfo.customerPhone);
-  const isCustomerPhoneTooShort = normalizedCustomerPhone.length > 0 && normalizedCustomerPhone.length < 10;
+  const isCustomerPhoneTooShort = isIndonesianPhoneTooShort(normalizedCustomerPhone);
   const normalizedCheckoutInfo: CheckoutInfo = {
     ...checkoutInfo,
     customerPhone: normalizedCustomerPhone,
