@@ -1,6 +1,16 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { formatCurrency } from '../../lib/formatCurrency';
+import {
+  ORDER_STATUS,
+  ORDER_STATUSES,
+  ORDER_STATUS_LABELS,
+  ORDER_STATUS_TONES,
+  countOrdersByStatus,
+  formatOrderDateTime,
+  getCustomerLabel,
+  getShortOrderId,
+} from '../../lib/orderStatus';
 import { formatPhoneDisplay, getWhatsAppChatUrl, normalizeIndonesianPhone } from '../../lib/phone';
 import { deleteOrder, getOrdersAdmin, getOrderStatusLogs, updateOrderStatus } from '../../services/orderService';
 import { supabase } from '../../services/supabaseClient';
@@ -11,31 +21,23 @@ type RealtimeStatus = 'connecting' | 'active' | 'unavailable';
 
 const statusOptions: Array<{ value: StatusFilter; label: string }> = [
   { value: 'all', label: 'Semua' },
-  { value: 'pending', label: 'Pending' },
-  { value: 'confirmed', label: 'Confirmed' },
-  { value: 'completed', label: 'Completed' },
-  { value: 'cancelled', label: 'Cancelled' },
+  ...ORDER_STATUSES.map((status) => ({ value: status, label: ORDER_STATUS_LABELS[status] })),
 ];
 
-const statusTone: Record<OrderStatus, string> = {
-  pending: 'bg-champagne/12 text-champagne',
-  confirmed: 'bg-sage/12 text-sage',
-  completed: 'bg-porcelain/12 text-porcelain',
-  cancelled: 'bg-blush/12 text-blush',
-};
-
-const statusLabels: Record<OrderStatus, string> = {
-  pending: 'Pending',
-  confirmed: 'Confirmed',
-  completed: 'Completed',
-  cancelled: 'Cancelled',
-};
-
 function getAllowedStatusTransitions(currentStatus: OrderStatus): OrderStatus[] {
-  if (currentStatus === 'pending') return ['confirmed', 'cancelled', 'completed'];
-  if (currentStatus === 'confirmed') return ['completed', 'cancelled'];
-  if (currentStatus === 'completed') return ['cancelled'];
-  return ['confirmed'];
+  if (currentStatus === ORDER_STATUS.pending) {
+    return [ORDER_STATUS.confirmed, ORDER_STATUS.cancelled, ORDER_STATUS.completed];
+  }
+
+  if (currentStatus === ORDER_STATUS.confirmed) {
+    return [ORDER_STATUS.completed, ORDER_STATUS.cancelled];
+  }
+
+  if (currentStatus === ORDER_STATUS.completed) {
+    return [ORDER_STATUS.cancelled];
+  }
+
+  return [ORDER_STATUS.confirmed];
 }
 
 function getStatusSelectOptions(currentStatus: OrderStatus): OrderStatus[] {
@@ -43,11 +45,11 @@ function getStatusSelectOptions(currentStatus: OrderStatus): OrderStatus[] {
 }
 
 function getStatusWarning(status: OrderStatus) {
-  if (status === 'completed') {
+  if (status === ORDER_STATUS.completed) {
     return 'Order selesai. Cancel akan mengembalikan stok jika sebelumnya sudah dikurangi.';
   }
 
-  if (status === 'cancelled') {
+  if (status === ORDER_STATUS.cancelled) {
     return 'Order dibatalkan. Confirm ulang akan mengurangi stok lagi jika stok tersedia.';
   }
 
@@ -55,7 +57,7 @@ function getStatusWarning(status: OrderStatus) {
 }
 
 function StatusBadge({ status }: { status: OrderStatus }) {
-  return <span className={`status-pill ${statusTone[status]}`}>{status}</span>;
+  return <span className={`status-pill ${ORDER_STATUS_TONES[status]}`}>{status}</span>;
 }
 
 function StockSyncBadge({ order }: { order: Order }) {
@@ -77,21 +79,6 @@ function StockSyncBadge({ order }: { order: Order }) {
       {order.stock_deducted ? 'Stok sudah dikurangi' : 'Stok belum dikurangi'}
     </span>
   );
-}
-
-function formatDateTime(value: string) {
-  return new Intl.DateTimeFormat('id-ID', {
-    dateStyle: 'medium',
-    timeStyle: 'short',
-  }).format(new Date(value));
-}
-
-function getShortOrderId(id: string) {
-  return id.slice(0, 8).toUpperCase();
-}
-
-function getCustomerLabel(order: Order) {
-  return order.customer_name?.trim() || 'Customer WhatsApp';
 }
 
 function getCustomerPhoneDisplay(order: Order) {
@@ -224,10 +211,10 @@ export default function AdminOrders() {
   const stats = useMemo(() => {
     return {
       total: orders.length,
-      pending: orders.filter((order) => order.status === 'pending').length,
-      confirmed: orders.filter((order) => order.status === 'confirmed').length,
-      completed: orders.filter((order) => order.status === 'completed').length,
-      cancelled: orders.filter((order) => order.status === 'cancelled').length,
+      pending: countOrdersByStatus(orders, ORDER_STATUS.pending),
+      confirmed: countOrdersByStatus(orders, ORDER_STATUS.confirmed),
+      completed: countOrdersByStatus(orders, ORDER_STATUS.completed),
+      cancelled: countOrdersByStatus(orders, ORDER_STATUS.cancelled),
     };
   }, [orders]);
 
@@ -388,9 +375,9 @@ export default function AdminOrders() {
         ),
       );
       const stockSyncMessage =
-        (status === 'confirmed' || status === 'completed') && updatedOrder.stock_deducted
+        (status === ORDER_STATUS.confirmed || status === ORDER_STATUS.completed) && updatedOrder.stock_deducted
           ? ' Stok produk sudah dikurangi.'
-          : status === 'cancelled' && updatedOrder.stock_restored
+          : status === ORDER_STATUS.cancelled && updatedOrder.stock_restored
             ? ' Stok produk sudah dikembalikan.'
           : '';
       setFeedbackMessage(`Order #${getShortOrderId(updatedOrder.id)} berhasil diubah ke ${updatedOrder.status}.${stockSyncMessage}`);
@@ -641,7 +628,7 @@ export default function AdminOrders() {
                       <tr key={order.id} className="border-t border-white/10 align-top hover:bg-white/4">
                         <td className="min-w-44 px-4 py-4">
                           <p className="font-semibold text-porcelain">#{getShortOrderId(order.id)}</p>
-                          <p className="mt-1 text-xs text-smoke">{formatDateTime(order.created_at)}</p>
+                          <p className="mt-1 text-xs text-smoke">{formatOrderDateTime(order.created_at)}</p>
                           <div className="mt-2">
                             <StockSyncBadge order={order} />
                           </div>
@@ -676,7 +663,7 @@ export default function AdminOrders() {
                             >
                               {allowedStatusOptions.map((status) => (
                                 <option key={status} value={status}>
-                                  {statusLabels[status]}
+                                  {ORDER_STATUS_LABELS[status]}
                                 </option>
                               ))}
                             </select>
@@ -711,7 +698,7 @@ export default function AdminOrders() {
                       <p className="text-xs font-semibold uppercase tracking-[0.16em] text-smoke">#{getShortOrderId(order.id)}</p>
                       <h3 className="mt-1 text-xl font-semibold leading-snug text-porcelain">{getCustomerLabel(order)}</h3>
                       {customerPhoneDisplay && <p className="mt-1 text-sm font-semibold text-mist">{customerPhoneDisplay}</p>}
-                      <p className="mt-1 text-xs text-smoke">{formatDateTime(order.created_at)}</p>
+                      <p className="mt-1 text-xs text-smoke">{formatOrderDateTime(order.created_at)}</p>
                       <div className="mt-2">
                         <StockSyncBadge order={order} />
                       </div>
@@ -758,7 +745,7 @@ export default function AdminOrders() {
                     >
                       {allowedStatusOptions.map((status) => (
                         <option key={status} value={status}>
-                          {statusLabels[status]}
+                          {ORDER_STATUS_LABELS[status]}
                         </option>
                       ))}
                     </select>
@@ -795,7 +782,7 @@ export default function AdminOrders() {
                   <h2 id="order-detail-title" className="mt-2 text-2xl font-semibold text-porcelain">
                     #{getShortOrderId(selectedOrder.id)}
                   </h2>
-                  <p className="mt-2 text-sm text-smoke">{formatDateTime(selectedOrder.created_at)}</p>
+                  <p className="mt-2 text-sm text-smoke">{formatOrderDateTime(selectedOrder.created_at)}</p>
                 </div>
                 <button
                   type="button"
@@ -819,7 +806,7 @@ export default function AdminOrders() {
                 <p className="mt-2 text-sm leading-6 text-mist">
                   Status berikutnya yang tersedia: {' '}
                   <span className="font-semibold text-porcelain">
-                    {getAllowedStatusTransitions(selectedOrder.status).map((status) => statusLabels[status]).join(', ')}
+                    {getAllowedStatusTransitions(selectedOrder.status).map((status) => ORDER_STATUS_LABELS[status]).join(', ')}
                   </span>
                 </p>
                 {getStatusWarning(selectedOrder.status) && (
@@ -880,7 +867,7 @@ export default function AdminOrders() {
                           <span className="break-all">
                             Oleh: <strong className="text-porcelain">{log.changed_by_email || 'Admin'}</strong>
                           </span>
-                          <span className="text-smoke">{formatDateTime(log.created_at)}</span>
+                          <span className="text-smoke">{formatOrderDateTime(log.created_at)}</span>
                         </div>
                         {log.note && <p className="mt-2 text-sm leading-6 text-smoke">{log.note}</p>}
                       </div>
@@ -895,12 +882,12 @@ export default function AdminOrders() {
                   <StockSyncBadge order={selectedOrder} />
                   {selectedOrder.stock_deducted_at && (
                     <span className="text-sm text-mist">
-                      Dikurangi pada {formatDateTime(selectedOrder.stock_deducted_at)}
+                      Dikurangi pada {formatOrderDateTime(selectedOrder.stock_deducted_at)}
                     </span>
                   )}
                   {selectedOrder.stock_restored_at && (
                     <span className="text-sm text-mist">
-                      Dikembalikan pada {formatDateTime(selectedOrder.stock_restored_at)}
+                      Dikembalikan pada {formatOrderDateTime(selectedOrder.stock_restored_at)}
                     </span>
                   )}
                 </div>

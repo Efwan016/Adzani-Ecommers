@@ -1,4 +1,5 @@
 import { supabase } from './supabaseClient';
+import { ORDER_STATUS } from '../lib/orderStatus';
 import { normalizeIndonesianPhone } from '../lib/phone';
 import type { CartItem, Order, OrderItem, OrderStatus, OrderStatusLog } from '../types/types';
 import type { CheckoutInfo } from './whatsappService';
@@ -63,7 +64,7 @@ export async function createOrder(input: CreateOrderInput): Promise<CreateOrderR
         customer_note: trimToNullable(input.checkoutInfo?.orderNote),
         items: orderItems,
         total,
-        status: 'pending',
+        status: ORDER_STATUS.pending,
         whatsapp_message: trimToNullable(input.whatsappMessage),
       },
     ]);

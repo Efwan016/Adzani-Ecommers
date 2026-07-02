@@ -2,6 +2,14 @@ import { useCallback, useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { useAuth } from '../../hooks/useAuth';
 import { formatCurrency } from '../../lib/formatCurrency';
+import {
+  ORDER_STATUS,
+  ORDER_STATUS_TONES,
+  countOrdersByStatus,
+  formatOrderDateTime,
+  getCustomerLabel,
+  getShortOrderId,
+} from '../../lib/orderStatus';
 import { formatPhoneDisplay } from '../../lib/phone';
 import { getOrdersAdmin } from '../../services/orderService';
 import { getAllProductsForAdmin } from '../../services/productService';
@@ -40,34 +48,12 @@ const shortcuts = [
   },
 ];
 
-const statusTone: Record<OrderStatus, string> = {
-  pending: 'bg-champagne/12 text-champagne',
-  confirmed: 'bg-sage/12 text-sage',
-  completed: 'bg-porcelain/12 text-porcelain',
-  cancelled: 'bg-blush/12 text-blush',
-};
-
-function getShortOrderId(id: string) {
-  return id.slice(0, 8).toUpperCase();
-}
-
-function getCustomerLabel(order: Order) {
-  return order.customer_name?.trim() || 'Customer WhatsApp';
-}
-
 function getCustomerPhoneDisplay(order: Order) {
   return formatPhoneDisplay(order.customer_phone);
 }
 
-function formatDateTime(value: string) {
-  return new Intl.DateTimeFormat('id-ID', {
-    dateStyle: 'medium',
-    timeStyle: 'short',
-  }).format(new Date(value));
-}
-
 function StatusBadge({ status }: { status: OrderStatus }) {
-  return <span className={`status-pill ${statusTone[status]}`}>{status}</span>;
+  return <span className={`status-pill ${ORDER_STATUS_TONES[status]}`}>{status}</span>;
 }
 
 function StockSyncBadge({ order }: { order: Order }) {
@@ -115,10 +101,10 @@ export default function AdminDashboard() {
 
   const orderStats = [
     { label: 'Total orders', value: orders.length, tone: 'text-porcelain' },
-    { label: 'Pending orders', value: orders.filter((order) => order.status === 'pending').length, tone: 'text-champagne' },
-    { label: 'Confirmed orders', value: orders.filter((order) => order.status === 'confirmed').length, tone: 'text-sage' },
-    { label: 'Completed orders', value: orders.filter((order) => order.status === 'completed').length, tone: 'text-porcelain' },
-    { label: 'Cancelled orders', value: orders.filter((order) => order.status === 'cancelled').length, tone: 'text-blush' },
+    { label: 'Pending orders', value: countOrdersByStatus(orders, ORDER_STATUS.pending), tone: 'text-champagne' },
+    { label: 'Confirmed orders', value: countOrdersByStatus(orders, ORDER_STATUS.confirmed), tone: 'text-sage' },
+    { label: 'Completed orders', value: countOrdersByStatus(orders, ORDER_STATUS.completed), tone: 'text-porcelain' },
+    { label: 'Cancelled orders', value: countOrdersByStatus(orders, ORDER_STATUS.cancelled), tone: 'text-blush' },
     { label: 'Total nominal order', value: formatCurrency(totalOrderNominal), tone: 'text-sage' },
   ];
 
@@ -313,7 +299,7 @@ export default function AdminDashboard() {
                       {getCustomerPhoneDisplay(order) && (
                         <p className="mt-1 break-all text-xs font-semibold text-smoke">{getCustomerPhoneDisplay(order)}</p>
                       )}
-                      <p className="mt-1 text-xs text-smoke">{formatDateTime(order.created_at)}</p>
+                      <p className="mt-1 text-xs text-smoke">{formatOrderDateTime(order.created_at)}</p>
                     </div>
                     <p className="text-lg font-semibold text-sage">{formatCurrency(order.total)}</p>
                   </Link>
