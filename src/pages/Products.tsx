@@ -213,9 +213,10 @@ export default function Products() {
       {!isLoading && !error && (
         <div className="surface-card mb-6 space-y-4 p-4 md:p-5">
           <div className="grid gap-4 lg:grid-cols-[minmax(0,1fr)_16rem]">
-            <label className="block">
+            <label htmlFor="product-search" className="block">
               <span className="mb-2 block text-xs font-bold uppercase tracking-[0.16em] text-smoke">Cari produk</span>
               <input
+                id="product-search"
                 type="search"
                 value={searchQuery}
                 onChange={(event) => setSearchQuery(event.target.value)}
@@ -224,9 +225,10 @@ export default function Products() {
               />
             </label>
 
-            <label className="block">
+            <label htmlFor="product-sort" className="block">
               <span className="mb-2 block text-xs font-bold uppercase tracking-[0.16em] text-smoke">Urutkan</span>
               <select
+                id="product-sort"
                 value={sortBy}
                 onChange={(event) => setSortBy(event.target.value as SortOption)}
                 className="field-control min-h-12 text-base"
@@ -249,6 +251,7 @@ export default function Products() {
                   key={category}
                   type="button"
                   onClick={() => setSelectedCategory(category)}
+                  aria-pressed={isActive}
                   className={`shrink-0 rounded-full px-4 py-2 text-sm font-semibold transition ${
                     isActive
                       ? 'bg-sage text-ink shadow-lg shadow-sage/10'
@@ -264,7 +267,7 @@ export default function Products() {
       )}
 
       {!isLoading && !error && cartFeedback && (
-        <div className="mb-5 rounded-md border border-sage/30 bg-sage/10 px-4 py-3 text-sm font-semibold text-sage">
+        <div className="mb-5 rounded-md border border-sage/30 bg-sage/10 px-4 py-3 text-sm font-semibold text-sage" role="status" aria-live="polite">
           {cartFeedback}
         </div>
       )}
@@ -380,6 +383,8 @@ export default function Products() {
                       type="button"
                       onClick={() => handleQuickAdd(product)}
                       disabled={!canQuickAdd}
+                      aria-label={`Tambah ${product.name} ke keranjang`}
+                      aria-describedby={!canQuickAdd ? `product-${product.id}-disabled-reason` : undefined}
                       className={`w-full rounded-md border px-4 py-3 text-sm font-bold transition ${
                         canQuickAdd
                           ? 'border-sage/30 bg-sage text-ink shadow-lg shadow-sage/10 hover:bg-[#b7e3d0]'
@@ -388,6 +393,11 @@ export default function Products() {
                     >
                       {isOutOfStock ? 'Stok Habis' : isAtCartLimit ? 'Stok Maksimal' : 'Tambah'}
                     </button>
+                    {!canQuickAdd && (
+                      <p id={`product-${product.id}-disabled-reason`} className="sr-only">
+                        {isOutOfStock ? 'Produk sedang stok habis.' : 'Jumlah produk di keranjang sudah mencapai stok toko.'}
+                      </p>
+                    )}
                   </div>
                 </div>
               </article>
