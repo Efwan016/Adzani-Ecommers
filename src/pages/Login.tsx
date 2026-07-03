@@ -49,14 +49,14 @@ export default function Login() {
         <p className="mt-3 text-sm leading-6 text-mist">Login dengan Google untuk mengelola produk Adzani Store.</p>
 
         {user && !isAdminUser(user) && (
-          <div className="error-panel mt-5 text-sm">
+          <div className="error-panel mt-5 text-sm" role="alert">
             <p className="font-semibold">Akun ini tidak memiliki akses admin.</p>
             {user.email && <p className="mt-2 break-all text-mist">{user.email}</p>}
           </div>
         )}
 
         {!user && accessDeniedFromRoute && (
-          <div className="error-panel mt-5 text-sm">
+          <div className="error-panel mt-5 text-sm" role="alert">
             Akun ini tidak memiliki akses admin.
           </div>
         )}
@@ -65,6 +65,7 @@ export default function Login() {
           <button
             type="button"
             onClick={handleLogin}
+            aria-label="Login ke panel admin dengan Google"
             className="btn-primary mt-6 w-full"
           >
             Login dengan Google
@@ -76,13 +77,13 @@ export default function Login() {
             <Link to="/" className="btn-secondary text-center">
               Kembali ke Home
             </Link>
-            <button type="button" onClick={handleLogout} className="btn-danger">
+            <button type="button" onClick={handleLogout} className="btn-danger" aria-label="Logout dari akun tanpa akses admin">
               Logout
             </button>
           </div>
         )}
 
-        {errorMessage && <p className="error-panel mt-4 text-sm">{errorMessage}</p>}
+        {errorMessage && <p className="error-panel mt-4 text-sm" role="alert">{errorMessage}</p>}
       </div>
     </section>
   );
