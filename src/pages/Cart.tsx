@@ -333,6 +333,7 @@ export default function Cart() {
                 type="button"
                 onClick={handleClearCartAfterChat}
                 disabled={items.length === 0}
+                aria-label="Kosongkan cart setelah chat admin"
                 className="rounded-md border border-blush/30 bg-blush/10 px-4 py-3 text-sm font-bold text-blush hover:bg-blush/15 disabled:cursor-not-allowed disabled:opacity-50"
               >
                 Saya sudah chat admin, kosongkan cart
@@ -474,6 +475,7 @@ export default function Cart() {
                     <button
                       type="button"
                       onClick={() => handleRemoveItem(item.product.id)}
+                      aria-label={`Hapus ${item.product.name} dari keranjang`}
                       className="w-fit rounded-md border border-blush/30 bg-blush/8 px-3 py-2 text-xs font-bold uppercase tracking-[0.14em] text-blush hover:bg-blush/14"
                     >
                       Hapus
@@ -576,9 +578,10 @@ export default function Cart() {
                 </p>
               </div>
 
-              <label className="field-label">
+              <label htmlFor="checkout-customer-name" className="field-label">
                 <span>Nama customer</span>
                 <input
+                  id="checkout-customer-name"
                   type="text"
                   value={checkoutInfo.customerName ?? ''}
                   onChange={(event) => setCheckoutInfo((current) => ({ ...current, customerName: event.target.value }))}
@@ -587,27 +590,31 @@ export default function Cart() {
                 />
               </label>
 
-              <label className="field-label">
+              <label htmlFor="checkout-customer-phone" className="field-label">
                 <span>Nomor WhatsApp</span>
                 <input
+                  id="checkout-customer-phone"
                   type="tel"
                   inputMode="tel"
                   value={checkoutInfo.customerPhone ?? ''}
                   onChange={(event) => setCheckoutInfo((current) => ({ ...current, customerPhone: event.target.value }))}
                   className="field-control"
                   placeholder="08xxxxxxxxxx"
+                  aria-describedby={isCustomerPhoneTooShort ? 'checkout-phone-help checkout-phone-error' : 'checkout-phone-help'}
+                  aria-invalid={isCustomerPhoneTooShort}
                 />
-                <span className="text-xs leading-5 text-smoke">Contoh: 08xxxxxxxxxx</span>
+                <span id="checkout-phone-help" className="text-xs leading-5 text-smoke">Contoh: 08xxxxxxxxxx</span>
                 {isCustomerPhoneTooShort && (
-                  <span className="text-xs leading-5 text-blush">
+                  <span id="checkout-phone-error" className="text-xs leading-5 text-blush">
                     Nomor WhatsApp terlalu pendek. Kosongkan atau isi nomor yang lebih lengkap.
                   </span>
                 )}
               </label>
 
-              <label className="field-label">
+              <label htmlFor="checkout-pickup-method" className="field-label">
                 <span>Metode ambil</span>
                 <select
+                  id="checkout-pickup-method"
                   value={checkoutInfo.pickupMethod ?? ''}
                   onChange={(event) => setCheckoutInfo((current) => ({ ...current, pickupMethod: event.target.value as PickupMethod }))}
                   className="field-control"
@@ -618,9 +625,10 @@ export default function Cart() {
                 </select>
               </label>
 
-              <label className="field-label">
+              <label htmlFor="checkout-order-note" className="field-label">
                 <span>Catatan pesanan</span>
                 <textarea
+                  id="checkout-order-note"
                   value={checkoutInfo.orderNote ?? ''}
                   onChange={(event) => setCheckoutInfo((current) => ({ ...current, orderNote: event.target.value }))}
                   rows={4}
@@ -647,10 +655,10 @@ export default function Cart() {
               </div>
             )}
 
-            {errorMessage && <p className="error-panel mt-4 text-sm">{errorMessage}</p>}
+            {errorMessage && <p className="error-panel mt-4 text-sm" role="alert">{errorMessage}</p>}
 
             {isCheckoutDisabled && checkoutDisabledReason && (
-              <p className="mt-4 rounded-md border border-champagne/30 bg-champagne/10 px-3 py-2 text-sm leading-6 text-champagne">
+              <p id="checkout-disabled-reason" className="mt-4 rounded-md border border-champagne/30 bg-champagne/10 px-3 py-2 text-sm leading-6 text-champagne">
                 {checkoutDisabledReason}
               </p>
             )}
@@ -659,6 +667,7 @@ export default function Cart() {
               type="button"
               onClick={handleCheckout}
               disabled={isCheckoutDisabled}
+              aria-describedby={isCheckoutDisabled && checkoutDisabledReason ? 'checkout-disabled-reason' : undefined}
               className="btn-primary mt-5 w-full py-4 text-base disabled:cursor-not-allowed disabled:opacity-50"
             >
               {isSavingOrder ? 'Menyimpan Order...' : isCartInvalid ? 'Perbaiki Keranjang Dulu' : isCustomerPhoneTooShort ? 'Periksa Nomor WhatsApp' : 'Checkout via WhatsApp'}
@@ -668,6 +677,7 @@ export default function Cart() {
               type="button"
               onClick={() => handleClearCart()}
               disabled={items.length === 0}
+              aria-label="Kosongkan semua item dari keranjang"
               className="mt-3 w-full rounded-md border border-white/10 bg-white/5 px-4 py-3 text-sm font-semibold text-smoke hover:border-blush/30 hover:bg-blush/10 hover:text-blush disabled:cursor-not-allowed disabled:opacity-50"
             >
               Kosongkan Keranjang
