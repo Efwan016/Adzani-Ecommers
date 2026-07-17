@@ -204,13 +204,13 @@ export default function ProductDetail() {
             </Link>
 
             <article className="surface-card grid gap-6 overflow-hidden p-3 lg:grid-cols-[1.04fr_0.96fr] lg:p-4">
-              <div className="relative min-h-[22rem] overflow-hidden rounded-md border border-white/10 bg-ink/70 sm:min-h-[28rem] lg:min-h-[34rem]">
+              <div className="relative min-h-22rem overflow-hidden rounded-md border border-white/10 bg-ink/70 sm:min-h-[28rem] lg:min-h-[34rem]">
                 {shouldShowImage ? (
                   <img
                     src={product.image_url ?? ''}
                     alt={product.name}
                     onError={() => setImageBroken(true)}
-                    className="h-full min-h-[22rem] w-full object-cover sm:min-h-[28rem] lg:min-h-[34rem]"
+                    className="h-full min-h-22rem w-full object-cover sm:min-h-28rem lg:min-h-34rem"
                   />
                 ) : (
                   <ProductImageFallback name={product.name} />

@@ -25,6 +25,13 @@ function makeProduct(overrides: Partial<Product> = {}): Product {
   };
 }
 
+async function updateCartInAct(action: () => void) {
+  await act(async () => {
+    action();
+    await Promise.resolve();
+  });
+}
+
 describe('useCart', () => {
   beforeEach(() => {
     localStorage.clear();
@@ -33,7 +40,7 @@ describe('useCart', () => {
   it('adds products and calculates totals', async () => {
     const { result } = renderHook(() => useCart());
 
-    act(() => {
+    await updateCartInAct(() => {
       result.current.addToCart(makeProduct(), 2);
     });
 
@@ -47,34 +54,34 @@ describe('useCart', () => {
     });
   });
 
-  it('does not add more than available stock', () => {
+  it('does not add more than available stock', async () => {
     const { result } = renderHook(() => useCart());
 
-    act(() => {
+    await updateCartInAct(() => {
       result.current.addToCart(makeProduct({ stock: 3 }), 10);
     });
 
     expect(result.current.items[0].qty).toBe(3);
   });
 
-  it('updates, removes, and clears items', () => {
+  it('updates, removes, and clears items', async () => {
     const { result } = renderHook(() => useCart());
     const product = makeProduct();
 
-    act(() => {
+    await updateCartInAct(() => {
       result.current.addToCart(product, 2);
       result.current.updateQty(product.id, 4);
     });
 
     expect(result.current.items[0].qty).toBe(4);
 
-    act(() => {
+    await updateCartInAct(() => {
       result.current.removeFromCart(product.id);
     });
 
     expect(result.current.items).toHaveLength(0);
 
-    act(() => {
+    await updateCartInAct(() => {
       result.current.addToCart(product, 1);
       result.current.clearCart();
     });
