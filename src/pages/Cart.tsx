@@ -6,6 +6,7 @@ import { useCart } from '../hooks/useCart';
 import { getProductsByIds } from '../services/productService';
 import { createOrder } from '../services/orderService';
 import { generateWhatsAppOrderMessage, getWhatsAppCheckoutUrl, getWhatsAppUrlForMessage, type CheckoutInfo, type PickupMethod } from '../services/whatsappService';
+import { RouteSeo } from '../lib/seo';
 
 type PriceChange = {
   previous: number;
@@ -283,6 +284,13 @@ export default function Cart() {
 
   return (
     <section className="page-shell">
+      <RouteSeo
+        meta={{
+          title: 'Checkout Order | Adzani Store',
+          description:
+            'Cek ulang item, jumlah barang, dan subtotal sebelum mengirim pesanan ke WhatsApp admin di Adzani Store.',
+        }}
+      />
       <div className="surface-card mb-6 overflow-hidden">
         <div className="grid gap-5 p-5 md:grid-cols-[1fr_auto] md:items-end md:p-7 lg:p-8">
           <div>

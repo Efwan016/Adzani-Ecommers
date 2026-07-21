@@ -3,9 +3,16 @@ import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { deleteProduct, getAllProductsForAdmin, updateProductStatus } from '../../services/productService';
 import type { Product } from '../../types/types';
 import { formatCurrency } from '../../lib/formatCurrency';
+import { RouteSeo } from '../../lib/seo';
 
 type StatusFilter = 'all' | 'active' | 'inactive' | 'out-of-stock';
 type SortOption = 'newest' | 'name-az' | 'price-low' | 'price-high' | 'stock-high';
+
+const ADMIN_PRODUCTS_SEO = {
+  title: 'Manajemen Produk | Adzani Store',
+  description: 'Kelola katalog, harga, stok, dan status produk yang tersedia di toko Adzani Store.',
+  noIndex: true,
+};
 
 const statusOptions: Array<{ value: StatusFilter; label: string }> = [
   { value: 'all', label: 'Semua' },
@@ -171,6 +178,7 @@ export default function AdminProducts() {
 
   return (
     <section className="page-shell">
+      <RouteSeo meta={ADMIN_PRODUCTS_SEO} />
       <div className="surface-card mb-6 overflow-hidden">
         <div className="grid gap-6 p-5 md:grid-cols-[1fr_auto] md:items-end md:p-7 lg:p-8">
           <div>

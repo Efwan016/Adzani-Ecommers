@@ -9,6 +9,13 @@ import {
 } from '../../services/productService';
 import { MAX_PRODUCT_IMAGE_SIZE, uploadProductImage } from '../../services/productImageService';
 import { slugify } from '../../lib/slugify';
+import { RouteSeo } from '../../lib/seo';
+
+const ADMIN_PRODUCT_FORM_SEO = {
+  title: 'Form Produk | Adzani Store',
+  description: 'Formulir admin untuk menambah atau mengedit produk yang akan muncul di katalog Adzani Store.',
+  noIndex: true,
+};
 
 type ProductFormState = {
   name: string;
@@ -251,6 +258,7 @@ export default function ProductForm() {
 
   return (
     <section className="page-shell">
+      <RouteSeo meta={ADMIN_PRODUCT_FORM_SEO} />
       <div className="surface-card mb-6 overflow-hidden">
         <div className="grid gap-5 p-5 md:grid-cols-[1fr_auto] md:items-end md:p-7 lg:p-8">
           <div>

@@ -4,6 +4,7 @@ import { useCart } from '../hooks/useCart';
 import { getProductBySlug } from '../services/productService';
 import type { Product } from '../types/types';
 import { formatCurrency } from '../lib/formatCurrency';
+import { RouteSeo } from '../lib/seo';
 
 function getProductInitials(name: string) {
   return name
@@ -93,6 +94,22 @@ export default function ProductDetail() {
   const [qty, setQty] = useState(1);
   const [imageBroken, setImageBroken] = useState(false);
 
+  const detailSeo = useMemo(() => {
+    if (!product) {
+      return {
+        title: 'Detail Produk | Adzani Store',
+        description: 'Detail produk dari Adzani Store: stok, harga, dan opsi checkout WhatsApp admin.',
+      };
+    }
+
+    return {
+      title: `${product.name} | Adzani Store`,
+      description: `${product.category}: ${product.name}. Stok ${product.stock > 0 ? `tersedia ${product.stock} item` : 'habis'}. Harga ${formatCurrency(product.price)}. Checkout via WhatsApp.`,
+      ogTitle: `Detail ${product.name} | Adzani Store`,
+      ogDescription: `Lihat detail ${product.name}, stok, harga, dan checkout via WhatsApp di Adzani Store.`,
+    };
+  }, [product]);
+
   const loadProduct = useCallback(async () => {
     setIsLoading(true);
     setError(null);
@@ -144,6 +161,7 @@ export default function ProductDetail() {
 
   return (
     <section className="page-shell">
+      <RouteSeo meta={detailSeo} />
       {isLoading && <ProductDetailSkeleton />}
 
       {error && (
@@ -204,7 +222,7 @@ export default function ProductDetail() {
             </Link>
 
             <article className="surface-card grid gap-6 overflow-hidden p-3 lg:grid-cols-[1.04fr_0.96fr] lg:p-4">
-              <div className="relative min-h-22rem overflow-hidden rounded-md border border-white/10 bg-ink/70 sm:min-h-[28rem] lg:min-h-[34rem]">
+              <div className="relative min-h-22remcek overflow-hidden rounded-md border border-white/10 bg-ink/70 sm:min-h-[28rem] lg:min-h-[34rem]">
                 {shouldShowImage ? (
                   <img
                     src={product.image_url ?? ''}

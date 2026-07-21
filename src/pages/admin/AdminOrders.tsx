@@ -15,9 +15,16 @@ import { formatPhoneDisplay, getWhatsAppChatUrl, normalizeIndonesianPhone } from
 import { deleteOrder, getOrdersAdmin, getOrderStatusLogs, updateOrderStatus } from '../../services/orderService';
 import { supabase } from '../../services/supabaseClient';
 import type { Order, OrderStatus, OrderStatusLog } from '../../types/types';
+import { RouteSeo } from '../../lib/seo';
 
 type StatusFilter = 'all' | OrderStatus;
 type RealtimeStatus = 'connecting' | 'active' | 'unavailable';
+
+const ADMIN_ORDERS_SEO = {
+  title: 'Order WhatsApp | Adzani Store',
+  description: 'Kelola status order yang masuk dari checkout WhatsApp dan pantau aktivitas toko secara realtime.',
+  noIndex: true,
+};
 
 const statusOptions: Array<{ value: StatusFilter; label: string }> = [
   { value: 'all', label: 'Semua' },
@@ -429,6 +436,7 @@ export default function AdminOrders() {
 
   return (
     <section className="page-shell">
+      <RouteSeo meta={ADMIN_ORDERS_SEO} />
       <div className="surface-card mb-6 overflow-hidden">
         <div className="grid gap-6 p-5 md:grid-cols-[1fr_auto] md:items-end md:p-7 lg:p-8">
           <div>

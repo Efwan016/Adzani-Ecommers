@@ -14,6 +14,13 @@ import { formatPhoneDisplay } from '../../lib/phone';
 import { getOrdersAdmin } from '../../services/orderService';
 import { getAllProductsForAdmin } from '../../services/productService';
 import type { Order, OrderStatus, Product } from '../../types/types';
+import { RouteSeo } from '../../lib/seo';
+
+const ADMIN_DASHBOARD_SEO = {
+  title: 'Admin Dashboard | Adzani Store',
+  description: 'Ringkasan produk, stok, dan order WhatsApp untuk operasional toko Adzani Store.',
+  noIndex: true,
+};
 
 const shortcuts = [
   {
@@ -154,6 +161,7 @@ export default function AdminDashboard() {
 
   return (
     <section className="page-shell">
+      <RouteSeo meta={ADMIN_DASHBOARD_SEO} />
       <div className="surface-card mb-6 overflow-hidden">
         <div className="grid gap-6 p-5 md:grid-cols-[1fr_auto] md:items-start md:p-7 lg:p-8">
           <div>

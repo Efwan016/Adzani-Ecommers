@@ -89,6 +89,17 @@ function ProductSkeletonGrid() {
   );
 }
 
+import { RouteSeo } from '../lib/seo';
+
+const PRODUCTS_SEO = {
+  title: 'Katalog Produk | Adzani Store',
+  description:
+    'Lihat katalog aktif Adzani Store: elektronik, aksesoris HP, voucher, dan layanan konter lain yang siap dipesan via WhatsApp.',
+  ogTitle: 'Katalog Produk Adzani Store',
+  ogDescription:
+    'Temukan gadget dan aksesoris yang siap dipesan dari katalog Adzani Store dengan stok yang selalu ditandai.',
+};
+
 export default function Products() {
   const { products, isLoading, error, loadProducts } = useProducts();
   const { items, addToCart } = useCart();
@@ -158,6 +169,7 @@ export default function Products() {
 
   return (
     <section className="page-shell">
+      <RouteSeo meta={PRODUCTS_SEO} />
       <div className="surface-card mb-6 overflow-hidden">
         <div className="grid gap-6 p-5 md:grid-cols-[1fr_auto] md:p-7 lg:p-8">
           <div>
