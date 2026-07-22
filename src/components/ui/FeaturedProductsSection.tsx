@@ -123,9 +123,10 @@ export default function FeaturedProductsSection() {
                 <div className="relative overflow-hidden rounded-md border border-white/10 bg-ink/70">
                   {shouldShowImage ? (
                     <img
-                      src={(getOptimizedImageUrl(product.image_url ?? '', { width: 640, quality: 75 }) || product.image_url) ?? ''}
+                      src={(getOptimizedImageUrl(product.image_url ?? '', { width: 480, quality: 70 }) || product.image_url) ?? ''}
                       alt={product.name}
                       fetchPriority="high"
+                      loading="eager"
                       decoding="async"
                       onError={() => markImageAsBroken(product.id)}
                       className="h-44 w-full object-cover transition duration-300 group-hover:scale-[1.03] group-hover:brightness-110"

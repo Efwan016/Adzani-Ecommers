@@ -41,7 +41,7 @@ export async function uploadProductImage(file: File, productSlug: string): Promi
   const { error } = await supabase.storage
     .from(PRODUCT_IMAGE_BUCKET)
     .upload(filePath, file, {
-      cacheControl: '3600',
+      cacheControl: '31536000',
       contentType: file.type,
       upsert: false,
     });
