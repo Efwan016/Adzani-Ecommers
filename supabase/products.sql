@@ -105,7 +105,7 @@ VALUES
     99000,
     65000,
     25,
-    'https://images.unsplash.com/photo-1511707171634-5f897ff02aa9?auto=format&fit=crop&w=800&q=80',
+    NULL,
     true
   ),
   (
@@ -116,7 +116,7 @@ VALUES
     129000,
     85000,
     18,
-    'https://images.unsplash.com/photo-1583394838336-acd977736f90?auto=format&fit=crop&w=800&q=80',
+    NULL,
     true
   ),
   (
@@ -127,7 +127,7 @@ VALUES
     45000,
     28000,
     40,
-    'https://images.unsplash.com/photo-1518444065439-e933c06ce9cd?auto=format&fit=crop&w=800&q=80',
+    NULL,
     true
   ),
   (
@@ -138,7 +138,7 @@ VALUES
     59000,
     35000,
     30,
-    'https://images.unsplash.com/photo-1511707171634-5f897ff02aa9?auto=format&fit=crop&w=800&q=80',
+    NULL,
     true
   ),
   (
@@ -149,7 +149,7 @@ VALUES
     179000,
     115000,
     12,
-    'https://images.unsplash.com/photo-1598327105666-5b89351aff97?auto=format&fit=crop&w=800&q=80',
+    NULL,
     true
   )
 ON CONFLICT (slug) DO NOTHING;

@@ -4,8 +4,10 @@ export default function HeroSection() {
   return (
     <section className="relative isolate overflow-hidden">
       <img
-        src="https://images.unsplash.com/photo-1511707171634-5f897ff02aa9?auto=format&fit=crop&w=1600&q=80"
+        src="/hero.webp"
         alt="Smartphone premium di meja display"
+        fetchPriority="high"
+        decoding="async"
         className="absolute inset-0 -z-20 h-full w-full object-cover"
       />
 
