@@ -283,7 +283,7 @@ export default function Cart() {
   };
 
   return (
-    <section className="page-shell">
+    <section className="page-wide">
       <RouteSeo
         meta={{
           title: 'Checkout Order | Adzani Store',

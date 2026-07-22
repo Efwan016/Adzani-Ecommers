@@ -21,7 +21,7 @@ const highlights = [
 
 export default function FeatureSection() {
   return (
-    <section id="features" className="mx-auto max-w-7xl px-4 pb-14 sm:px-6 lg:px-10">
+    <section className="page-wide">
       <div className="grid gap-8 lg:grid-cols-[0.9fr_1.1fr]">
         <div>
           <p className="eyebrow">Alur belanja</p>

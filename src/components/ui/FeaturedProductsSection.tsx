@@ -68,7 +68,7 @@ export default function FeaturedProductsSection() {
   };
 
   return (
-    <section className="mx-auto max-w-7xl px-4 pb-14 sm:px-6 lg:px-10">
+    <section className="page-wide">
       <div className="flex flex-col gap-4 md:flex-row md:items-end md:justify-between">
         <div>
           <p className="eyebrow">Produk terbaru</p>

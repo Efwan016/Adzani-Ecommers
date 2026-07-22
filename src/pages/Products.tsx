@@ -168,7 +168,7 @@ export default function Products() {
   };
 
   return (
-    <section className="page-shell">
+    <section className="page-wide">
       <RouteSeo meta={PRODUCTS_SEO} />
       <div className="surface-card mb-6 overflow-hidden">
         <div className="grid gap-6 p-5 md:grid-cols-[1fr_auto] md:p-7 lg:p-8">

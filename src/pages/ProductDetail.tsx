@@ -160,7 +160,7 @@ export default function ProductDetail() {
   };
 
   return (
-    <section className="page-shell">
+    <section className="page-wide">
       <RouteSeo meta={detailSeo} />
       {isLoading && <ProductDetailSkeleton />}
 

@@ -20,7 +20,7 @@ export default function Footer() {
 
   return (
     <footer className="border-t border-white/10 bg-ink/92">
-      <div className="mx-auto grid max-w-7xl gap-8 px-4 py-10 sm:px-6 md:grid-cols-2 lg:grid-cols-[1.25fr_0.75fr_0.85fr_1.1fr] lg:px-10">
+      <div className="grid gap-8 px-4 py-10 sm:px-6 md:grid-cols-2 lg:grid-cols-[1.25fr_0.75fr_0.85fr_1.1fr] lg:px-10">
         <div>
           <Link to="/" className="inline-flex items-center gap-3">
             <span className="grid h-10 w-10 place-items-center rounded-lg border border-sage/30 bg-sage/12 text-sm font-black text-sage">
