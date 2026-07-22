@@ -4,6 +4,7 @@ import { useCart } from '../hooks/useCart';
 import { useProducts } from '../hooks/useProducts';
 import { formatCurrency } from '../lib/formatCurrency';
 import type { Product } from '../types/types';
+import { getOptimizedImageUrl } from '../services/productImageService';
 
 type SortOption = 'newest' | 'price-low' | 'price-high' | 'stock-high';
 
@@ -341,7 +342,7 @@ export default function Products() {
                   <div className="relative overflow-hidden rounded-md border border-white/10 bg-ink/70">
                     {shouldShowImage ? (
                       <img
-                        src={product.image_url ?? ''}
+                        src={(getOptimizedImageUrl(product.image_url ?? '', { width: 480, quality: 70 }) || product.image_url) ?? ''}
                         alt={product.name}
                         onError={() => markImageAsBroken(product.id)}
                         className="h-52 w-full object-cover transition duration-300 group-hover:scale-[1.03] group-hover:brightness-110"

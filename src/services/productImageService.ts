@@ -60,3 +60,28 @@ export async function uploadProductImage(file: File, productSlug: string): Promi
 
   return data.publicUrl;
 }
+
+/**
+ * Append Supabase Storage (imgix) transform params to a public image URL so the
+ * CDN returns a resized, next-gen (WebP/AVIF) asset. Falls back to the original
+ * URL for non-Supabase or already-transformed URLs.
+ */
+export function getOptimizedImageUrl(
+  url: string | null | undefined,
+  options: { width?: number; height?: number; quality?: number } = {},
+): string {
+  if (!url) return '';
+  const { width, height, quality = 80 } = options;
+  if (!url.includes('supabase.co/storage/v1/object/public/')) {
+    return url;
+  }
+
+  const separator = url.includes('?') ? '&' : '?';
+  const params = new URLSearchParams();
+  if (width) params.set('width', String(width));
+  if (height) params.set('height', String(height));
+  params.set('quality', String(quality));
+  params.set('format', 'webp');
+
+  return `${url}${separator}${params.toString()}`;
+}

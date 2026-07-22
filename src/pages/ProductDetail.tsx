@@ -10,6 +10,7 @@ import {
   buildBreadcrumbJsonLd,
   absoluteUrl,
 } from '../lib/seo';
+import { getOptimizedImageUrl } from '../services/productImageService';
 
 function getProductInitials(name: string) {
   return name
@@ -243,7 +244,7 @@ export default function ProductDetail() {
               <div className="relative min-h-22remcek overflow-hidden rounded-md border border-white/10 bg-ink/70 sm:min-h-[28rem] lg:min-h-[34rem]">
                 {shouldShowImage ? (
                   <img
-                    src={product.image_url ?? ''}
+                    src={(getOptimizedImageUrl(product.image_url ?? '', { width: 1000, quality: 80 }) || product.image_url) ?? ''}
                     alt={product.name}
                     onError={() => setImageBroken(true)}
                     className="h-full min-h-22rem w-full object-cover sm:min-h-28rem lg:min-h-34rem"

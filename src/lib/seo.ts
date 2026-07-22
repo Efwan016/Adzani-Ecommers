@@ -33,8 +33,11 @@ export function absoluteUrl(pathOrUrl?: string): string {
   return `${SITE_ORIGIN}${pathOrUrl.startsWith('/') ? '' : '/'}${pathOrUrl}`;
 }
 
-/** Default OG image (absolute). */
-export const OG_IMAGE = absoluteUrl('/og-image.png');
+/** Default OG image (absolute). Prefer WebP, fall back to SVG for old crawlers. */
+export const OG_IMAGE = absoluteUrl('/og-image.webp');
+
+/** SVG fallback OG image for platforms that don't accept WebP. */
+export const OG_IMAGE_FALLBACK = absoluteUrl('/og-image.svg');
 
 /** Canonical of the current path (root-relative). */
 export function currentCanonical(): string {

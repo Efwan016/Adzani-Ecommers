@@ -7,6 +7,7 @@ import { getProductsByIds } from '../services/productService';
 import { createOrder } from '../services/orderService';
 import { generateWhatsAppOrderMessage, getWhatsAppCheckoutUrl, getWhatsAppUrlForMessage, type CheckoutInfo, type PickupMethod } from '../services/whatsappService';
 import { RouteSeo, absoluteUrl } from '../lib/seo';
+import { getOptimizedImageUrl } from '../services/productImageService';
 
 type PriceChange = {
   previous: number;
@@ -401,7 +402,7 @@ export default function Cart() {
                   <Link to={`/products/${item.product.slug}`} className="overflow-hidden rounded-md border border-white/10 bg-ink/70 focus:outline-none focus-visible:ring-2 focus-visible:ring-sage">
                     {shouldShowImage ? (
                       <img
-                        src={item.product.image_url ?? ''}
+                        src={(getOptimizedImageUrl(item.product.image_url ?? '', { width: 160, quality: 70 }) || item.product.image_url) ?? ''}
                         alt={item.product.name}
                         onError={() => markImageAsBroken(item.product.id)}
                         className="h-28 w-full object-cover md:h-28 md:w-28"
