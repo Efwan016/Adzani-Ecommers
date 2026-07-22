@@ -180,29 +180,28 @@ dist
 
 ## Deployment Notes
 
-Vercel setup:
+Vercel setup (one-click import from GitHub):
 
 - Framework preset: Vite
-- Build command: `npm run build`
+- Build command: `npm run build` (or `vercel-build`)
 - Output directory: `dist`
-- Environment variables:
+- Install command: `npm ci`
+- Environment variables (set in Vercel dashboard, all injected at build time):
+  - `VITE_SITE_URL` — **required**; absolute production URL (no trailing slash), e.g. `https://adzani-store.vercel.app`. Drives canonical links, sitemap, OG image, and JSON-LD absolute URLs.
   - `VITE_SUPABASE_URL`
   - `VITE_SUPABASE_ANON_KEY`
   - `VITE_WHATSAPP_ADMIN`
   - `VITE_ADMIN_EMAILS`
 
-This repo includes `vercel.json` SPA rewrites so direct refresh on nested routes works:
+Copy `.env.production.example` to your Vercel env values (prefix must be `VITE_` for anything used in the browser).
 
-```json
-{
-  "rewrites": [
-    {
-      "source": "/(.*)",
-      "destination": "/"
-    }
-  ]
-}
-```
+This repo ships a `vercel.json` that:
+
+- Adds an SPA rewrite so direct refresh on nested routes (`/products/:slug`, `/admin/*`) works.
+- Sets security headers on every response: `Content-Security-Policy` (strict, allows only the Supabase origin for img/connect), `X-Content-Type-Options`, `X-Frame-Options: DENY`, `Referrer-Policy`, `Permissions-Policy`, and `Strict-Transport-Security` (HSTS, preload).
+- Sends `Cache-Control: immutable` (1y) for `/assets/*` so hashed bundles cache forever.
+
+After the first deploy, re-run Lighthouse against the production URL (not localhost) — the CSP, HSTS, long-cache headers, and Supabase image CDN transforms only take effect there, which is what lifts the Performance score above the localhost baseline.
 
 ## Current Status
 
