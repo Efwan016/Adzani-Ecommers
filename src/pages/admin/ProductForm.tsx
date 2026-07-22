@@ -9,11 +9,12 @@ import {
 } from '../../services/productService';
 import { MAX_PRODUCT_IMAGE_SIZE, uploadProductImage } from '../../services/productImageService';
 import { slugify } from '../../lib/slugify';
-import { RouteSeo } from '../../lib/seo';
+import { RouteSeo, absoluteUrl } from '../../lib/seo';
 
 const ADMIN_PRODUCT_FORM_SEO = {
   title: 'Form Produk | Adzani Store',
   description: 'Formulir admin untuk menambah atau mengedit produk yang akan muncul di katalog Adzani Store.',
+  canonical: absoluteUrl('/admin/products/new'),
   noIndex: true,
 };
 

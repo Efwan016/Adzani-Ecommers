@@ -1,18 +1,18 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
   <url>
-    <loc>/</loc>
+    <loc>https://adzani-store.example.com/</loc>
     <priority>1.0</priority>
     <changefreq>weekly</changefreq>
   </url>
   <url>
-    <loc>/products</loc>
+    <loc>https://adzani-store.example.com/products</loc>
     <priority>0.9</priority>
     <changefreq>daily</changefreq>
   </url>
   <url>
-    <loc>/cart</loc>
-    <priority>0.6</priority>
-    <changefreq>weekly</changefreq>
+    <loc>https://adzani-store.example.com/login</loc>
+    <priority>0.2</priority>
+    <changefreq>yearly</changefreq>
   </url>
 </urlset>

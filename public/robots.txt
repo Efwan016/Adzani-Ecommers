@@ -1,5 +1,9 @@
 User-agent: *
-Disallow: /admin
 Allow: /
 
-Sitemap: /sitemap.xml
+# Halaman privat / panel admin tidak boleh diindex
+Disallow: /login
+Disallow: /admin
+Disallow: /cart
+
+Sitemap: https://adzani-store.example.com/sitemap.xml

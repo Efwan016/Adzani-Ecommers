@@ -4,7 +4,12 @@ import { useCart } from '../hooks/useCart';
 import { getProductBySlug } from '../services/productService';
 import type { Product } from '../types/types';
 import { formatCurrency } from '../lib/formatCurrency';
-import { RouteSeo } from '../lib/seo';
+import {
+  RouteSeo,
+  buildProductJsonLd,
+  buildBreadcrumbJsonLd,
+  absoluteUrl,
+} from '../lib/seo';
 
 function getProductInitials(name: string) {
   return name
@@ -99,14 +104,27 @@ export default function ProductDetail() {
       return {
         title: 'Detail Produk | Adzani Store',
         description: 'Detail produk dari Adzani Store: stok, harga, dan opsi checkout WhatsApp admin.',
+        noIndex: false,
       };
     }
+
+    const productJsonLd = buildProductJsonLd(product);
+    const breadcrumbJsonLd = buildBreadcrumbJsonLd([
+      { name: 'Beranda', url: '/' },
+      { name: 'Katalog', url: '/products' },
+      { name: product.name, url: `/products/${product.slug}` },
+    ]);
 
     return {
       title: `${product.name} | Adzani Store`,
       description: `${product.category}: ${product.name}. Stok ${product.stock > 0 ? `tersedia ${product.stock} item` : 'habis'}. Harga ${formatCurrency(product.price)}. Checkout via WhatsApp.`,
       ogTitle: `Detail ${product.name} | Adzani Store`,
       ogDescription: `Lihat detail ${product.name}, stok, harga, dan checkout via WhatsApp di Adzani Store.`,
+      ogImage: product.image_url || undefined,
+      ogType: 'article' as const,
+      canonical: absoluteUrl(`/products/${product.slug}`),
+      noIndex: !product.is_active,
+      jsonLd: [productJsonLd, breadcrumbJsonLd],
     };
   }, [product]);
 

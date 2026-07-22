@@ -89,7 +89,7 @@ function ProductSkeletonGrid() {
   );
 }
 
-import { RouteSeo } from '../lib/seo';
+import { RouteSeo, buildBreadcrumbJsonLd, absoluteUrl } from '../lib/seo';
 
 const PRODUCTS_SEO = {
   title: 'Katalog Produk | Adzani Store',
@@ -98,6 +98,11 @@ const PRODUCTS_SEO = {
   ogTitle: 'Katalog Produk Adzani Store',
   ogDescription:
     'Temukan gadget dan aksesoris yang siap dipesan dari katalog Adzani Store dengan stok yang selalu ditandai.',
+  canonical: absoluteUrl('/products'),
+  jsonLd: buildBreadcrumbJsonLd([
+    { name: 'Beranda', url: '/' },
+    { name: 'Katalog', url: '/products' },
+  ]),
 };
 
 export default function Products() {
