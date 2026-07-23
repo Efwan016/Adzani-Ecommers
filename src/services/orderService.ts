@@ -12,6 +12,7 @@ export type CreateOrderInput = {
 
 export type CreateOrderResult = {
   id: string;
+  tracking_token: string | null;
 };
 
 function trimToNullable(value?: string | null) {
@@ -53,7 +54,7 @@ export async function createOrder(input: CreateOrderInput): Promise<CreateOrderR
   const total = orderItems.reduce((sum, item) => sum + item.subtotal, 0);
   const orderId = createOrderId();
 
-  const { error } = await supabase
+  const { data, error } = await supabase
     .from('orders')
     .insert([
       {
@@ -67,13 +68,18 @@ export async function createOrder(input: CreateOrderInput): Promise<CreateOrderR
         status: ORDER_STATUS.pending,
         whatsapp_message: trimToNullable(input.whatsappMessage),
       },
-    ]);
+    ])
+    .select('id, tracking_token')
+    .single();
 
   if (error) {
     throw new Error(error.message);
   }
 
-  return { id: orderId };
+  return {
+    id: (data as { id: string }).id,
+    tracking_token: (data as { tracking_token: string | null }).tracking_token ?? null,
+  };
 }
 
 export async function getOrdersAdmin(): Promise<Order[]> {

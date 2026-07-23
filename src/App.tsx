@@ -10,6 +10,7 @@ const ProductDetail = lazy(() => import('./pages/ProductDetail'));
 const Cart = lazy(() => import('./pages/Cart'));
 const Login = lazy(() => import('./pages/Login'));
 const NotFound = lazy(() => import('./pages/NotFound'));
+const TrackOrder = lazy(() => import('./pages/TrackOrder'));
 const AdminDashboard = lazy(() => import('./pages/admin/AdminDashboard'));
 const AdminProducts = lazy(() => import('./pages/admin/AdminProducts'));
 const AdminOrders = lazy(() => import('./pages/admin/AdminOrders'));
@@ -136,6 +137,14 @@ export default function App() {
                   </LazyRoute>
                 </Layout>
               </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/track"
+            element={
+              <LazyRoute>
+                <TrackOrder />
+              </LazyRoute>
             }
           />
           <Route

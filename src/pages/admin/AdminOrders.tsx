@@ -207,6 +207,7 @@ export default function AdminOrders() {
   const [statusFilter, setStatusFilter] = useState<StatusFilter>('all');
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedOrderId, setSelectedOrderId] = useState<string | null>(null);
+  const [currentPage, setCurrentPage] = useState(1);
   const [orderStatusLogs, setOrderStatusLogs] = useState<OrderStatusLog[]>([]);
   const [isLogsLoading, setIsLogsLoading] = useState(false);
   const [logsError, setLogsError] = useState<string | null>(null);
@@ -252,6 +253,17 @@ export default function AdminOrders() {
   }, [orders, searchQuery, statusFilter]);
 
   const hasActiveFilters = statusFilter !== 'all' || searchQuery.trim() !== '';
+
+  const PAGE_SIZE = 15;
+  const totalPages = Math.max(1, Math.ceil(visibleOrders.length / PAGE_SIZE));
+  const safePage = Math.min(Math.max(1, currentPage), totalPages);
+  const pageStart = (safePage - 1) * PAGE_SIZE;
+  const pageEnd = Math.min(pageStart + PAGE_SIZE, visibleOrders.length);
+  const pagedOrders = visibleOrders.slice(pageStart, pageEnd);
+
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [searchQuery, statusFilter, orders.length]);
 
   const loadOrders = useCallback(async (options: { silent?: boolean } = {}) => {
     if (options.silent) {
@@ -627,7 +639,7 @@ export default function AdminOrders() {
                   </tr>
                 </thead>
                 <tbody>
-                  {visibleOrders.map((order) => {
+                  {pagedOrders.map((order) => {
                     const isBusy = busyOrderId === order.id || deletingOrderId === order.id;
                     const allowedStatusOptions = getStatusSelectOptions(order.status);
                     const customerPhoneDisplay = getCustomerPhoneDisplay(order);
@@ -694,7 +706,7 @@ export default function AdminOrders() {
           </div>
 
           <div className="space-y-4 xl:hidden">
-            {visibleOrders.map((order) => {
+              {pagedOrders.map((order) => {
               const isBusy = busyOrderId === order.id || deletingOrderId === order.id;
               const allowedStatusOptions = getStatusSelectOptions(order.status);
               const customerPhoneDisplay = getCustomerPhoneDisplay(order);
@@ -771,6 +783,48 @@ export default function AdminOrders() {
             })}
           </div>
         </>
+      )}
+
+      {!isLoading && visibleOrders.length > 0 && totalPages > 1 && (
+        <nav className="mt-6 flex flex-col items-center gap-4" aria-label="Navigasi halaman order">
+          <p className="text-sm text-smoke">
+            Menampilkan <span className="font-semibold text-mist">{pageStart + 1}</span>–<span className="font-semibold text-mist">{pageEnd}</span> dari{' '}
+            <span className="font-semibold text-mist">{visibleOrders.length}</span> order
+          </p>
+          <div className="flex flex-wrap items-center justify-center gap-2">
+            <button
+              type="button"
+              onClick={() => setCurrentPage((page) => Math.max(1, page - 1))}
+              disabled={safePage <= 1}
+              className="btn-secondary px-4 py-2 disabled:cursor-not-allowed disabled:opacity-50"
+            >
+              Sebelumnya
+            </button>
+            {Array.from({ length: totalPages }, (_, index) => index + 1).map((page) => (
+              <button
+                key={page}
+                type="button"
+                onClick={() => setCurrentPage(page)}
+                aria-current={page === safePage ? 'page' : undefined}
+                className={`min-w-10 rounded-md border px-3 py-2 text-sm font-semibold transition ${
+                  page === safePage
+                    ? 'border-sage/35 bg-sage/14 text-sage'
+                    : 'border-white/10 bg-white/5 text-mist hover:bg-white/10'
+                }`}
+              >
+                {page}
+              </button>
+            ))}
+            <button
+              type="button"
+              onClick={() => setCurrentPage((page) => Math.min(totalPages, page + 1))}
+              disabled={safePage >= totalPages}
+              className="btn-secondary px-4 py-2 disabled:cursor-not-allowed disabled:opacity-50"
+            >
+              Berikutnya
+            </button>
+          </div>
+        </nav>
       )}
 
       {selectedOrder && (

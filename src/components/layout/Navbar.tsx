@@ -53,6 +53,7 @@ export default function Navbar() {
   const navItems: NavItem[] = [
     { label: 'Home', to: '/' },
     { label: 'Katalog', to: '/products' },
+    { label: 'Lacak', to: '/track' },
     ...(canOpenAdmin ? [
       { label: 'Admin', to: '/admin' },
       { label: 'Orders', to: '/admin/orders' },

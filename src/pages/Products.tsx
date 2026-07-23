@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { useCart } from '../hooks/useCart';
 import { useProducts } from '../hooks/useProducts';
@@ -114,6 +114,7 @@ export default function Products() {
   const [sortBy, setSortBy] = useState<SortOption>('newest');
   const [cartFeedback, setCartFeedback] = useState('');
   const [brokenImageIds, setBrokenImageIds] = useState<Set<string>>(() => new Set());
+  const [currentPage, setCurrentPage] = useState(1);
 
   const categories = useMemo(() => {
     const uniqueCategories = Array.from(new Set(products.map((product) => product.category.trim()).filter(Boolean)));
@@ -144,6 +145,17 @@ export default function Products() {
     setSortBy('newest');
     setCartFeedback('');
   };
+
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [searchQuery, selectedCategory, sortBy]);
+
+  const PAGE_SIZE = 12;
+  const totalPages = Math.max(1, Math.ceil(filteredProducts.length / PAGE_SIZE));
+  const safePage = Math.min(Math.max(1, currentPage), totalPages);
+  const pageStart = (safePage - 1) * PAGE_SIZE;
+  const pageEnd = Math.min(pageStart + PAGE_SIZE, filteredProducts.length);
+  const pagedProducts = filteredProducts.slice(pageStart, pageEnd);
 
   const markImageAsBroken = (productId: string) => {
     setBrokenImageIds((current) => {
@@ -321,9 +333,9 @@ export default function Products() {
         </div>
       )}
 
-      {!isLoading && !error && filteredProducts.length > 0 && (
+      {!isLoading && !error && pagedProducts.length > 0 && (
         <div className="grid grid-cols-1 gap-5 md:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4">
-          {filteredProducts.map((product) => {
+          {pagedProducts.map((product) => {
             const stockMeta = getStockMeta(product.stock);
             const description = product.description || 'Detail produk akan dikonfirmasi oleh admin saat checkout.';
             const cartQty = cartQtyByProductId.get(product.id) ?? 0;
@@ -344,6 +356,8 @@ export default function Products() {
                       <img
                         src={(getOptimizedImageUrl(product.image_url ?? '', { width: 480, quality: 70 }) || product.image_url) ?? ''}
                         alt={product.name}
+                        loading="lazy"
+                        decoding="async"
                         onError={() => markImageAsBroken(product.id)}
                         className="h-52 w-full object-cover transition duration-300 group-hover:scale-[1.03] group-hover:brightness-110"
                       />
@@ -423,6 +437,77 @@ export default function Products() {
           })}
         </div>
       )}
+
+      {!isLoading && !error && totalPages > 1 && pagedProducts.length > 0 && (
+        <ProductPagination
+          currentPage={safePage}
+          totalPages={totalPages}
+          pageStart={pageStart}
+          pageEnd={pageEnd}
+          totalItems={filteredProducts.length}
+          onPageChange={setCurrentPage}
+        />
+      )}
     </section>
+  );
+}
+
+function ProductPagination({
+  currentPage,
+  totalPages,
+  pageStart,
+  pageEnd,
+  totalItems,
+  onPageChange,
+}: {
+  currentPage: number;
+  totalPages: number;
+  pageStart: number;
+  pageEnd: number;
+  totalItems: number;
+  onPageChange: (page: number) => void;
+}) {
+  const pageNumbers = Array.from({ length: totalPages }, (_, index) => index + 1);
+
+  return (
+    <nav className="mt-8 flex flex-col items-center gap-4" aria-label="Navigasi halaman produk">
+      <p className="text-sm text-smoke">
+        Menampilkan <span className="font-semibold text-mist">{pageStart + 1}</span>–<span className="font-semibold text-mist">{pageEnd}</span> dari{' '}
+        <span className="font-semibold text-mist">{totalItems}</span> produk
+      </p>
+      <div className="flex flex-wrap items-center justify-center gap-2">
+        <button
+          type="button"
+          onClick={() => onPageChange(currentPage - 1)}
+          disabled={currentPage <= 1}
+          className="btn-secondary px-4 py-2 disabled:cursor-not-allowed disabled:opacity-50"
+        >
+          Sebelumnya
+        </button>
+        {pageNumbers.map((page) => (
+          <button
+            key={page}
+            type="button"
+            onClick={() => onPageChange(page)}
+            aria-current={page === currentPage ? 'page' : undefined}
+            className={`min-w-10 rounded-md border px-3 py-2 text-sm font-semibold transition ${
+              page === currentPage
+                ? 'border-sage/35 bg-sage/14 text-sage'
+                : 'border-white/10 bg-white/5 text-mist hover:bg-white/10'
+            }`}
+          >
+            {page}
+          </button>
+        ))}
+        <button
+          type="button"
+          onClick={() => onPageChange(currentPage + 1)}
+          disabled={currentPage >= totalPages}
+          className="btn-secondary px-4 py-2 disabled:cursor-not-allowed disabled:opacity-50"
+        >
+          Berikutnya
+        </button>
+      </div>
+    </nav>
   );
 }

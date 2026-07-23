@@ -6,7 +6,7 @@ import { useCart } from '../hooks/useCart';
 import { getProductsByIds } from '../services/productService';
 import { createOrder } from '../services/orderService';
 import { generateWhatsAppOrderMessage, getWhatsAppCheckoutUrl, getWhatsAppUrlForMessage, type CheckoutInfo, type PickupMethod } from '../services/whatsappService';
-import { RouteSeo, absoluteUrl } from '../lib/seo';
+import { RouteSeo, absoluteUrl, SITE_ORIGIN } from '../lib/seo';
 import { getOptimizedImageUrl } from '../services/productImageService';
 
 type PriceChange = {
@@ -60,6 +60,7 @@ export default function Cart() {
   const [isSavingOrder, setIsSavingOrder] = useState(false);
   const [hasOpenedWhatsApp, setHasOpenedWhatsApp] = useState(false);
   const [savedOrderId, setSavedOrderId] = useState('');
+  const [savedTrackingToken, setSavedTrackingToken] = useState('');
   const [lastCheckoutUrl, setLastCheckoutUrl] = useState('');
   const [unavailableProductIds, setUnavailableProductIds] = useState<Set<string>>(() => new Set());
   const [priceChanges, setPriceChanges] = useState<Record<string, PriceChange>>({});
@@ -233,6 +234,7 @@ export default function Cart() {
       });
 
       setSavedOrderId(order.id);
+      setSavedTrackingToken(order.tracking_token ?? '');
       setLastCheckoutUrl(url);
       setHasOpenedWhatsApp(true);
       window.open(url, '_blank', 'noopener,noreferrer');
@@ -361,6 +363,32 @@ export default function Cart() {
                 Buka WhatsApp lagi
               </button>
             </div>
+            {savedTrackingToken && (
+              <div className="mt-5 rounded-md border border-sage/30 bg-sage/8 p-4 text-sm leading-6 text-mist">
+                <p className="font-semibold text-sage">Lacak pesanan kamu</p>
+                <p className="mt-1">
+                  Simpan link ini untuk cek status order kapan saja (tidak perlu login):
+                </p>
+                <div className="mt-3 flex flex-col gap-2 sm:flex-row sm:items-center">
+                  <Link
+                    to={`/track?token=${encodeURIComponent(savedTrackingToken)}`}
+                    className="break-all rounded-md border border-white/10 bg-white/5 px-3 py-2 text-xs font-semibold text-porcelain hover:bg-white/10"
+                  >
+                    {`${SITE_ORIGIN}/track?token=${savedTrackingToken.slice(0, 12)}…`}
+                  </Link>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      const full = `${window.location.origin}/track?token=${encodeURIComponent(savedTrackingToken)}`;
+                      void navigator.clipboard?.writeText(full);
+                    }}
+                    className="btn-secondary shrink-0 px-3 py-2 text-xs"
+                  >
+                    Salin link
+                  </button>
+                </div>
+              </div>
+            )}
           </div>
         </div>
       )}
@@ -404,6 +432,8 @@ export default function Cart() {
                       <img
                         src={(getOptimizedImageUrl(item.product.image_url ?? '', { width: 160, quality: 70 }) || item.product.image_url) ?? ''}
                         alt={item.product.name}
+                        loading="lazy"
+                        decoding="async"
                         onError={() => markImageAsBroken(item.product.id)}
                         className="h-28 w-full object-cover md:h-28 md:w-28"
                       />

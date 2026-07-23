@@ -21,6 +21,9 @@ export default class ErrorBoundary extends Component<ErrorBoundaryProps, ErrorBo
     if (import.meta.env.DEV) {
       console.error('UI runtime error caught by ErrorBoundary:', error, errorInfo);
     }
+    import('../../lib/monitor')
+      .then(({ captureError }) => captureError(error, 'ErrorBoundary'))
+      .catch(() => {});
   }
 
   private reloadPage = () => {
