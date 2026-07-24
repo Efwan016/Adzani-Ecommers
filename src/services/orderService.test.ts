@@ -33,7 +33,7 @@ vi.mock('../services/supabaseClient', () => ({
   },
 }));
 
-import { createOrder, deleteOrder, getOrdersAdmin, updateOrderStatus } from './orderService';
+import { createOrder, deleteOrder, getOrdersAdmin, updateOrderStatus, updateOrderAdminNote } from './orderService';
 
 describe('orderService', () => {
   beforeEach(() => {
@@ -83,5 +83,18 @@ describe('orderService', () => {
     mockFrom.mockReturnValue({ delete: () => ({ eq }) });
     await deleteOrder('order-1');
     expect(eq).toHaveBeenCalledWith('id', 'order-1');
+  });
+
+  it('updateOrderAdminNote calls update with note', async () => {
+    const single = vi.fn(() => ({ data: { id: 'order-1', admin_note: 'catatan baru' }, error: null }));
+    const select = vi.fn(() => ({ single }));
+    const eq = vi.fn(() => ({ select }));
+    const update = vi.fn(() => ({ eq }));
+    mockFrom.mockReturnValue({ update });
+
+    const result = await updateOrderAdminNote('order-1', 'catatan baru');
+    expect(update).toHaveBeenCalledWith({ admin_note: 'catatan baru' });
+    expect(eq).toHaveBeenCalledWith('id', 'order-1');
+    expect(result.admin_note).toBe('catatan baru');
   });
 });

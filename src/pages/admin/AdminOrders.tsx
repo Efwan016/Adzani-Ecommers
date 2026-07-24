@@ -12,7 +12,7 @@ import {
   getShortOrderId,
 } from '../../lib/orderStatus';
 import { formatPhoneDisplay, getWhatsAppChatUrl, normalizeIndonesianPhone } from '../../lib/phone';
-import { deleteOrder, getOrdersAdmin, getOrderStatusLogs, updateOrderStatus } from '../../services/orderService';
+import { deleteOrder, getOrdersAdmin, getOrderStatusLogs, updateOrderStatus, updateOrderAdminNote } from '../../services/orderService';
 import { supabase } from '../../services/supabaseClient';
 import type { Order, OrderStatus, OrderStatusLog } from '../../types/types';
 import { RouteSeo } from '../../lib/seo';
@@ -215,6 +215,18 @@ export default function AdminOrders() {
   const [realtimeMessage, setRealtimeMessage] = useState('Menghubungkan realtime...');
   const [error, setError] = useState<string | null>(null);
   const [feedbackMessage, setFeedbackMessage] = useState('');
+
+  const [adminNoteText, setAdminNoteText] = useState('');
+  const [isSavingNote, setIsSavingNote] = useState(false);
+  const [noteError, setNoteError] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (selectedOrder) {
+      setAdminNoteText(selectedOrder.admin_note ?? '');
+      setNoteError(null);
+    }
+  }, [selectedOrderId]);
+
 
   const stats = useMemo(() => {
     return {
@@ -426,6 +438,26 @@ export default function AdminOrders() {
       setError(err instanceof Error ? err.message : 'Gagal menghapus order');
     } finally {
       setDeletingOrderId(null);
+    }
+  };
+
+  const handleUpdateAdminNote = async () => {
+    if (!selectedOrder) return;
+    setIsSavingNote(true);
+    setNoteError(null);
+
+    try {
+      const updatedOrder = await updateOrderAdminNote(selectedOrder.id, adminNoteText.trim() || null);
+      setOrders((currentOrders) =>
+        currentOrders.map((currentOrder) =>
+          currentOrder.id === updatedOrder.id ? updatedOrder : currentOrder,
+        ),
+      );
+      setFeedbackMessage(`Catatan internal order #${getShortOrderId(updatedOrder.id)} berhasil diperbarui.`);
+    } catch (err) {
+      setNoteError(err instanceof Error ? err.message : 'Gagal menyimpan catatan');
+    } finally {
+      setIsSavingNote(false);
     }
   };
 
@@ -992,6 +1024,33 @@ export default function AdminOrders() {
               <div className="surface-muted p-4">
                 <p className="text-xs font-semibold uppercase tracking-[0.14em] text-smoke">Catatan customer</p>
                 <p className="mt-2 whitespace-pre-wrap text-sm leading-6 text-mist">{selectedOrder.customer_note || '-'}</p>
+              </div>
+
+              <div className="rounded-md border border-white/10 bg-white/5 p-4">
+                <label htmlFor="admin-note-input" className="text-xs font-semibold uppercase tracking-[0.14em] text-smoke">
+                  Catatan Internal Admin (Hanya Admin)
+                </label>
+                <div className="mt-2 space-y-2">
+                  <textarea
+                    id="admin-note-input"
+                    value={adminNoteText}
+                    onChange={(e) => setAdminNoteText(e.target.value)}
+                    placeholder="Masukkan catatan khusus internal untuk order ini..."
+                    rows={3}
+                    className="w-full rounded-md border border-white/10 bg-ink/30 px-3 py-2 text-sm text-porcelain placeholder:text-smoke focus:border-sage/40 focus:outline-none"
+                  />
+                  {noteError && <p className="text-xs font-semibold text-blush">{noteError}</p>}
+                  <div className="flex justify-end">
+                    <button
+                      type="button"
+                      onClick={handleUpdateAdminNote}
+                      disabled={isSavingNote || adminNoteText === (selectedOrder.admin_note ?? '')}
+                      className="btn-primary px-3 py-2 text-xs disabled:cursor-not-allowed disabled:opacity-50"
+                    >
+                      {isSavingNote ? 'Menyimpan...' : 'Simpan Catatan'}
+                    </button>
+                  </div>
+                </div>
               </div>
 
               <div>

@@ -153,3 +153,23 @@ export async function deleteOrder(id: string): Promise<void> {
     throw new Error(error.message);
   }
 }
+
+export async function updateOrderAdminNote(id: string, note: string | null): Promise<Order> {
+  if (!supabase) {
+    throw new Error('Supabase belum dikonfigurasi. Periksa file .env.');
+  }
+
+  const { data, error } = await supabase
+    .from('orders')
+    .update({ admin_note: note })
+    .eq('id', id)
+    .select('*')
+    .single();
+
+  if (error) {
+    throw new Error(error.message);
+  }
+
+  return data as Order;
+}
+

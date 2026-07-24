@@ -41,6 +41,7 @@ export type Order = {
   total: number;
   status: OrderStatus;
   whatsapp_message: string | null;
+  admin_note?: string | null;
   stock_deducted?: boolean;
   stock_deducted_at?: string | null;
   stock_restored?: boolean;
