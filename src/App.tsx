@@ -142,9 +142,11 @@ export default function App() {
           <Route
             path="/track"
             element={
-              <LazyRoute>
-                <TrackOrder />
-              </LazyRoute>
+              <Layout>
+                <LazyRoute>
+                  <TrackOrder />
+                </LazyRoute>
+              </Layout>
             }
           />
           <Route
