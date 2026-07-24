@@ -143,6 +143,13 @@ export default function TrackOrder() {
             </div>
           </div>
 
+          {order.shipping_address && (
+            <div className="mt-3 rounded-md border border-white/10 bg-white/5 px-4 py-3">
+              <p className="text-xs font-semibold uppercase tracking-[0.14em] text-smoke">Alamat Pengiriman</p>
+              <p className="mt-1 text-sm leading-6 text-mist whitespace-pre-wrap">{order.shipping_address}</p>
+            </div>
+          )}
+
           {order.customer_note && (
             <div className="mt-3 rounded-md border border-white/10 bg-white/5 px-4 py-3">
               <p className="text-xs font-semibold uppercase tracking-[0.14em] text-smoke">Catatan</p>

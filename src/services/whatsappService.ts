@@ -2,13 +2,14 @@ import type { CartItem } from '../types/types';
 import { formatCurrency } from '../lib/formatCurrency';
 import { formatPhoneDisplay } from '../lib/phone';
 
-export type PickupMethod = 'Ambil di toko' | 'Tanya admin dulu' | '';
+export type PickupMethod = 'Ambil di toko' | 'Tanya admin dulu' | 'Kirim via Ekspedisi' | '';
 
 export type CheckoutInfo = {
   customerName?: string;
   customerPhone?: string;
   orderNote?: string;
   pickupMethod?: PickupMethod;
+  shippingAddress?: string;
 };
 
 export function generateWhatsAppOrderMessage(items: CartItem[], checkoutInfo: CheckoutInfo = {}): string {
@@ -27,11 +28,13 @@ export function generateWhatsAppOrderMessage(items: CartItem[], checkoutInfo: Ch
   const customerPhone = formatPhoneDisplay(checkoutInfo.customerPhone);
   const orderNote = checkoutInfo.orderNote?.trim();
   const pickupMethod = checkoutInfo.pickupMethod?.trim();
+  const shippingAddress = checkoutInfo.shippingAddress?.trim();
 
   const customerLines = [
     customerName ? `Nama: ${customerName}` : null,
     customerPhone ? `Nomor WhatsApp: ${customerPhone}` : null,
     pickupMethod ? `Metode ambil: ${pickupMethod}` : null,
+    shippingAddress ? `Alamat kirim: ${shippingAddress}` : null,
     orderNote ? `Catatan: ${orderNote}` : null,
   ].filter(Boolean);
 

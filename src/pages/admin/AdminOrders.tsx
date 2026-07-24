@@ -1030,6 +1030,13 @@ export default function AdminOrders() {
                 </div>
               </div>
 
+              {selectedOrder.shipping_address && (
+                <div className="surface-muted p-4">
+                  <p className="text-xs font-semibold uppercase tracking-[0.14em] text-smoke">Alamat Pengiriman</p>
+                  <p className="mt-2 whitespace-pre-wrap text-sm leading-6 text-mist">{selectedOrder.shipping_address}</p>
+                </div>
+              )}
+
               <div className="surface-muted p-4">
                 <p className="text-xs font-semibold uppercase tracking-[0.14em] text-smoke">Catatan customer</p>
                 <p className="mt-2 whitespace-pre-wrap text-sm leading-6 text-mist">{selectedOrder.customer_note || '-'}</p>
@@ -1112,6 +1119,9 @@ export default function AdminOrders() {
                 <p style={{ margin: '3px 0' }}>Nama: {getCustomerLabel(selectedOrder)}</p>
                 <p style={{ margin: '3px 0' }}>Telepon: {getCustomerPhoneDisplay(selectedOrder) || '-'}</p>
                 <p style={{ margin: '3px 0' }}>Metode: {selectedOrder.pickup_method || '-'}</p>
+                {selectedOrder.shipping_address && (
+                  <p style={{ margin: '3px 0' }}>Alamat: {selectedOrder.shipping_address}</p>
+                )}
               </div>
               <div style={{ marginBottom: '15px' }}>
                 <p style={{ margin: '0 0 5px 0' }}>Daftar Produk:</p>

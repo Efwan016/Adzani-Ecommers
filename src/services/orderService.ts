@@ -63,6 +63,7 @@ export async function createOrder(input: CreateOrderInput): Promise<CreateOrderR
         customer_phone: trimToNullable(normalizeIndonesianPhone(input.checkoutInfo?.customerPhone)),
         pickup_method: trimToNullable(input.checkoutInfo?.pickupMethod),
         customer_note: trimToNullable(input.checkoutInfo?.orderNote),
+        shipping_address: trimToNullable(input.checkoutInfo?.shippingAddress),
         items: orderItems,
         total,
         status: ORDER_STATUS.pending,

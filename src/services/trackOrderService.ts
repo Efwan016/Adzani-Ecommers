@@ -16,6 +16,7 @@ export type TrackedOrder = {
   }>;
   pickup_method: string | null;
   customer_note: string | null;
+  shipping_address: string | null;
   created_at: string;
   updated_at: string;
 };

@@ -33,11 +33,13 @@ function getCheckoutDisabledReason(options: {
   isCartInvalid: boolean;
   isCustomerPhoneTooShort: boolean;
   isSavingOrder: boolean;
+  isShippingAddressMissing: boolean;
 }) {
   if (!options.hasItems) return 'Keranjang masih kosong.';
   if (options.isSavingOrder) return 'Order sedang disimpan.';
   if (options.isCartInvalid) return 'Perbaiki item yang stoknya bermasalah sebelum checkout.';
   if (options.isCustomerPhoneTooShort) return 'Nomor WhatsApp terlalu pendek. Kosongkan atau isi nomor yang lebih lengkap.';
+  if (options.isShippingAddressMissing) return 'Alamat pengiriman wajib diisi untuk pengiriman via ekspedisi.';
 
   return '';
 }
@@ -93,12 +95,14 @@ export default function Cart() {
   const customerPhoneDisplay = formatPhoneDisplay(normalizedCustomerPhone);
   const pickupMethodLabel = checkoutInfo.pickupMethod?.trim() || 'Belum dipilih';
   const whatsappPreview = items.length > 0 ? generateWhatsAppOrderMessage(items, normalizedCheckoutInfo) : '';
-  const isCheckoutDisabled = items.length === 0 || isCartInvalid || isSavingOrder || isCustomerPhoneTooShort;
+  const isShippingAddressMissing = checkoutInfo.pickupMethod === 'Kirim via Ekspedisi' && !checkoutInfo.shippingAddress?.trim();
+  const isCheckoutDisabled = items.length === 0 || isCartInvalid || isSavingOrder || isCustomerPhoneTooShort || isShippingAddressMissing;
   const checkoutDisabledReason = getCheckoutDisabledReason({
     hasItems: items.length > 0,
     isCartInvalid,
     isCustomerPhoneTooShort,
     isSavingOrder,
+    isShippingAddressMissing,
   });
   const shortOrderId = savedOrderId ? savedOrderId.slice(0, 8).toUpperCase() : '';
 
@@ -662,9 +666,25 @@ export default function Cart() {
                 >
                   <option value="">Pilih jika perlu</option>
                   <option value="Ambil di toko">Ambil di toko</option>
+                  <option value="Kirim via Ekspedisi">Kirim via Ekspedisi (JNE/J&T/Sicepat)</option>
                   <option value="Tanya admin dulu">Tanya admin dulu</option>
                 </select>
               </label>
+
+              {checkoutInfo.pickupMethod === 'Kirim via Ekspedisi' && (
+                <label htmlFor="checkout-shipping-address" className="field-label">
+                  <span>Alamat Pengiriman (Wajib diisi)</span>
+                  <textarea
+                    id="checkout-shipping-address"
+                    value={checkoutInfo.shippingAddress ?? ''}
+                    onChange={(event) => setCheckoutInfo((current) => ({ ...current, shippingAddress: event.target.value }))}
+                    rows={3}
+                    required
+                    className="field-control resize-y"
+                    placeholder="Masukkan alamat pengiriman lengkap (Jalan, RT/RW, Kecamatan, Kota, Kode Pos)..."
+                  />
+                </label>
+              )}
 
               <label htmlFor="checkout-order-note" className="field-label">
                 <span>Catatan pesanan</span>

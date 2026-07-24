@@ -35,6 +35,7 @@ describe('TrackOrder page', () => {
       items: [{ product_id: 'x', name: 'Item A', slug: 'item-a', category: 'cat', price: 75000, qty: 2, subtotal: 150000, image_url: null }],
       pickup_method: null,
       customer_note: null,
+      shipping_address: null,
       created_at: '2026-01-01T00:00:00.000Z',
       updated_at: '2026-01-01T00:00:00.000Z',
     });
