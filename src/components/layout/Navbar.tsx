@@ -76,8 +76,8 @@ export default function Navbar() {
   }, [isMenuOpen]);
 
   return (
-    <header className="absolute inset-x-0 top-0 z-30 border-b border-white/10 bg-ink/86 backdrop-blur-xl">
-      <div className="px-4 sm:px-6 lg:px-10">
+      <header className="absolute inset-x-0 top-0 z-30 border-b border-white/10 bg-ink/86 backdrop-blur-xl">
+      <div className="w-full px-4 sm:px-6 lg:px-8">
         <div className="flex min-h-16 items-center justify-between gap-3 py-2">
           <Link to="/" onClick={closeMenu} className="group flex min-w-0 items-center gap-3">
             <span className="grid h-9 w-9 shrink-0 place-items-center rounded-lg border border-sage/30 bg-sage/12 text-sm font-black text-sage">

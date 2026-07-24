@@ -7,8 +7,8 @@ export default function SupabaseSection() {
   const canOpenAdmin = !isLoading && isAdminUser(user);
 
   return (
-    <section className="page-wide">
-      <div className="surface-card grid gap-6 p-6 md:grid-cols-[1fr_auto] md:items-center md:p-8">
+    <section className="w-full px-4 py-14 sm:px-6 lg:px-8">
+      <div className="surface-card grid gap-6 p-6 md:grid-cols-[1fr_auto] md:items-center md:p-8 w-full">
         <div>
           <p className="eyebrow">{canOpenAdmin ? 'Operasional toko' : 'Katalog Adzani'}</p>
 

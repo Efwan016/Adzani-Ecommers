@@ -21,8 +21,8 @@ const highlights = [
 
 export default function FeatureSection() {
   return (
-    <section className="page-wide">
-      <div className="grid gap-8 lg:grid-cols-[0.9fr_1.1fr]">
+    <section className="w-full px-4 py-14 sm:px-6 lg:px-8">
+      <div className="grid gap-8 lg:grid-cols-[0.9fr_1.1fr] w-full">
         <div>
           <p className="eyebrow">Alur belanja</p>
 
@@ -43,12 +43,14 @@ export default function FeatureSection() {
           </div>
         </div>
 
-        <div className="grid gap-4 sm:grid-cols-2">
+        <div className="grid gap-4 sm:grid-cols-2 card-3d-wrapper">
           {highlights.map((item, index) => (
-            <article key={item.title} className="surface-card p-5">
-              <p className="text-xs font-semibold uppercase tracking-[0.16em] text-sage">0{index + 1}</p>
-              <h3 className="text-lg font-semibold text-porcelain">{item.title}</h3>
-              <p className="mt-3 text-sm leading-6 text-mist">{item.copy}</p>
+            <article key={item.title} className="surface-card p-5 card-3d">
+              <div className="card-3d-content">
+                <p className="text-xs font-semibold uppercase tracking-[0.16em] text-sage">0{index + 1}</p>
+                <h3 className="text-lg font-semibold text-porcelain">{item.title}</h3>
+                <p className="mt-3 text-sm leading-6 text-mist">{item.copy}</p>
+              </div>
             </article>
           ))}
         </div>

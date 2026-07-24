@@ -25,8 +25,8 @@ const categories = [
 
 export default function ProductGrid() {
   return (
-    <section id="products" className="mx-auto max-w-7xl px-4 py-14 sm:px-6 lg:px-10">
-      <div className="flex flex-col gap-4 md:flex-row md:items-end md:justify-between">
+    <section id="products" className="w-full px-4 py-14 sm:px-6 lg:px-8">
+      <div className="flex flex-col gap-4 md:flex-row md:items-end md:justify-between w-full">
         <div>
           <p className="eyebrow">Pilihan katalog</p>
           <h2 className="section-title mt-3">Kategori yang paling sering dicari.</h2>
@@ -43,28 +43,30 @@ export default function ProductGrid() {
         </div>
       </div>
 
-      <div className="mt-8 grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
+      <div className="mt-8 grid gap-4 sm:grid-cols-2 xl:grid-cols-4 card-3d-wrapper">
         {categories.map((item, index) => (
           <Link
             key={item.title}
             to={item.href}
-            className="surface-card block p-5 transition hover:-translate-y-1 hover:border-sage/35 hover:bg-white/8"
+            className="surface-card block p-5 card-3d"
           >
-            <p className="text-xs font-semibold uppercase tracking-[0.16em] text-smoke">
-              0{index + 1}
-            </p>
+            <div className="card-3d-content">
+              <p className="text-xs font-semibold uppercase tracking-[0.16em] text-smoke">
+                0{index + 1}
+              </p>
 
-            <h3 className="mt-5 text-xl font-semibold text-porcelain">
-              {item.title}
-            </h3>
+              <h3 className="mt-5 text-xl font-semibold text-porcelain">
+                {item.title}
+              </h3>
 
-            <p className="mt-3 text-sm leading-6 text-mist">
-              {item.copy}
-            </p>
+              <p className="mt-3 text-sm leading-6 text-mist">
+                {item.copy}
+              </p>
 
-            <p className="mt-5 text-sm font-semibold text-sage">
-              Buka katalog
-            </p>
+              <p className="mt-5 text-sm font-semibold text-sage">
+                Buka katalog
+              </p>
+            </div>
           </Link>
         ))}
       </div>

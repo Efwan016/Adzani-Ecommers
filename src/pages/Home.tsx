@@ -16,13 +16,13 @@ const HOME_SEO = {
 
 export default function Home() {
   return (
-    <>
+    <div className="w-full overflow-x-hidden flex flex-col gap-6">
       <RouteSeo meta={HOME_SEO} />
       <HeroSection />
       <ProductGrid />
       <FeaturedProductsSection />
       <FeatureSection />
       <SupabaseSection />
-    </>
+    </div>
   );
 }

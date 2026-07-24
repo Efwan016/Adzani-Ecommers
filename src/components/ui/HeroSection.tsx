@@ -2,7 +2,7 @@ import { Link } from 'react-router-dom';
 
 export default function HeroSection() {
   return (
-    <section className="relative isolate overflow-hidden">
+    <section className="relative isolate overflow-hidden w-full">
       <img
         src="/hero.webp"
         alt="Smartphone premium di meja display"
@@ -14,8 +14,8 @@ export default function HeroSection() {
       <div className="absolute inset-0 -z-10 bg-[linear-gradient(90deg,rgba(15,21,19,0.94)_0%,rgba(15,21,19,0.78)_43%,rgba(15,21,19,0.38)_100%)]" />
       <div className="absolute inset-x-0 bottom-0 -z-10 h-32 bg-gradient-to-t from-ink to-transparent" />
 
-      <div className="grid min-h-[72vh] md:grid-cols-2">
-        <div className="flex items-center px-4 py-16 sm:px-6 lg:px-10">
+      <div className="grid min-h-[72vh] md:grid-cols-2 w-full px-4 sm:px-6 lg:px-8">
+        <div className="flex items-center py-16">
           <div className="max-w-2xl">
             <p className="eyebrow">Konter elektronik dan aksesoris</p>
 

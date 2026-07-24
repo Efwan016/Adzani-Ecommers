@@ -69,8 +69,8 @@ export default function FeaturedProductsSection() {
   };
 
   return (
-    <section className="page-wide">
-      <div className="flex flex-col gap-4 md:flex-row md:items-end md:justify-between">
+    <section className="w-full px-4 py-14 sm:px-6 lg:px-8">
+      <div className="flex flex-col gap-4 md:flex-row md:items-end md:justify-between w-full">
         <div>
           <p className="eyebrow">Produk terbaru</p>
           <h2 className="section-title mt-3">Intip barang yang siap dipesan.</h2>
@@ -110,7 +110,7 @@ export default function FeaturedProductsSection() {
       )}
 
       {!isLoading && products.length > 0 && (
-        <div className="mt-8 grid gap-4 md:grid-cols-3">
+        <div className="mt-8 grid gap-4 md:grid-cols-3 card-3d-wrapper">
           {products.map((product) => {
             const shouldShowImage = Boolean(product.image_url) && !brokenImageIds.has(product.id);
 
@@ -118,37 +118,39 @@ export default function FeaturedProductsSection() {
               <Link
                 key={product.id}
                 to={`/products/${product.slug}`}
-                className="surface-card group overflow-hidden p-3 transition hover:-translate-y-1 hover:border-sage/35 hover:bg-white/8"
+                className="surface-card group overflow-hidden p-3 card-3d"
               >
-                <div className="relative overflow-hidden rounded-md border border-white/10 bg-ink/70">
-                  {shouldShowImage ? (
-                    <img
-                      src={(getOptimizedImageUrl(product.image_url ?? '', { width: 480, quality: 70 }) || product.image_url) ?? ''}
-                      alt={product.name}
-                      fetchPriority="high"
-                      loading="eager"
-                      decoding="async"
-                      onError={() => markImageAsBroken(product.id)}
-                      className="h-44 w-full object-cover transition duration-300 group-hover:scale-[1.03] group-hover:brightness-110"
-                    />
-                  ) : (
-                    <ProductImageFallback name={product.name} />
-                  )}
+                <div className="card-3d-content">
+                  <div className="relative overflow-hidden rounded-md border border-white/10 bg-ink/70">
+                    {shouldShowImage ? (
+                      <img
+                        src={(getOptimizedImageUrl(product.image_url ?? '', { width: 480, quality: 70 }) || product.image_url) ?? ''}
+                        alt={product.name}
+                        fetchPriority="high"
+                        loading="eager"
+                        decoding="async"
+                        onError={() => markImageAsBroken(product.id)}
+                        className="h-44 w-full object-cover transition duration-300 group-hover:scale-[1.03] group-hover:brightness-110"
+                      />
+                    ) : (
+                      <ProductImageFallback name={product.name} />
+                    )}
 
-                  <span className="absolute left-3 top-3 rounded-full border border-white/10 bg-ink/78 px-3 py-1 text-xs font-semibold text-mist backdrop-blur">
-                    {product.category}
-                  </span>
-                </div>
-
-                <div className="p-2 pt-4">
-                  <h3 className="line-clamp-2 text-lg font-semibold leading-snug text-porcelain group-hover:text-sage">
-                    {product.name}
-                  </h3>
-                  <div className="mt-4 flex items-center justify-between gap-3 text-sm">
-                    <span className="font-semibold text-sage">{formatCurrency(product.price)}</span>
-                    <span className={product.stock > 0 ? 'text-smoke' : 'text-blush'}>
-                      {product.stock > 0 ? `${product.stock} stok` : 'Stok habis'}
+                    <span className="absolute left-3 top-3 rounded-full border border-white/10 bg-ink/78 px-3 py-1 text-xs font-semibold text-mist backdrop-blur">
+                      {product.category}
                     </span>
+                  </div>
+
+                  <div className="p-2 pt-4">
+                    <h3 className="line-clamp-2 text-lg font-semibold leading-snug text-porcelain group-hover:text-sage">
+                      {product.name}
+                    </h3>
+                    <div className="mt-4 flex items-center justify-between gap-3 text-sm">
+                      <span className="font-semibold text-sage">{formatCurrency(product.price)}</span>
+                      <span className={product.stock > 0 ? 'text-smoke' : 'text-blush'}>
+                        {product.stock > 0 ? `${product.stock} stok` : 'Stok habis'}
+                      </span>
+                    </div>
                   </div>
                 </div>
               </Link>
