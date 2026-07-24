@@ -1,7 +1,11 @@
 -- Migration: Add shipping_address to public.orders table
 ALTER TABLE public.orders ADD COLUMN IF NOT EXISTS shipping_address text NULL;
 
--- Update get_order_by_token function to also return shipping_address
+-- Drop the existing function first because changing the return table structure
+-- requires dropping the function signature in PostgreSQL.
+DROP FUNCTION IF EXISTS public.get_order_by_token(text);
+
+-- Recreate get_order_by_token function to also return shipping_address
 CREATE OR REPLACE FUNCTION public.get_order_by_token(p_token text)
 RETURNS TABLE (
   tracking_token text,
