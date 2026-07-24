@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { useAuth } from '../../hooks/useAuth';
 import { formatCurrency } from '../../lib/formatCurrency';
@@ -96,8 +96,39 @@ export default function AdminDashboard() {
   const activeProducts = products.filter((product) => product.is_active).length;
   const inactiveProducts = products.length - activeProducts;
   const outOfStockProducts = products.filter((product) => product.stock <= 0).length;
-  const totalOrderNominal = orders.reduce((sum, order) => sum + order.total, 0);
+  const totalOrderNominal = orders.reduce((sum, order) => sum + (order.status !== ORDER_STATUS.cancelled ? order.total : 0), 0);
   const recentOrders = orders.slice(0, 5);
+
+  // 1. Revenue Breakdown (excluding cancelled)
+  const revenueByPaymentMethod = useMemo(() => {
+    const methods: Record<string, number> = {};
+    orders.forEach((o) => {
+      if (o.status !== ORDER_STATUS.cancelled) {
+        const method = o.pickup_method || 'WhatsApp';
+        methods[method] = (methods[method] || 0) + o.total;
+      }
+    });
+    return Object.entries(methods).map(([name, total]) => ({ name, total }));
+  }, [orders]);
+
+  // 2. Best Selling Products (from orders, excluding cancelled)
+  const topProducts = useMemo(() => {
+    const counts: Record<string, { name: string; qty: number; total: number }> = {};
+    orders.forEach((o) => {
+      if (o.status !== ORDER_STATUS.cancelled) {
+        o.items.forEach((item) => {
+          if (!counts[item.product_id]) {
+            counts[item.product_id] = { name: item.name, qty: 0, total: 0 };
+          }
+          counts[item.product_id].qty += item.qty;
+          counts[item.product_id].total += item.subtotal;
+        });
+      }
+    });
+    return Object.values(counts)
+      .sort((a, b) => b.qty - a.qty)
+      .slice(0, 5);
+  }, [orders]);
 
   const stats = [
     { label: 'Total produk', value: products.length, tone: 'text-porcelain' },
@@ -252,6 +283,55 @@ export default function AdminDashboard() {
                     <p className="mt-1 text-xs font-semibold uppercase tracking-[0.14em] text-smoke">{stat.label}</p>
                   </div>
                 ))}
+              </div>
+            )}
+
+            {!isOrdersLoading && !ordersError && orders.length > 0 && (
+              <div className="mt-6 grid gap-5 border-t border-white/10 pt-6 md:grid-cols-2">
+                {/* Visualisasi 1: Pendapatan Metode Ambil */}
+                <div>
+                  <h3 className="text-sm font-semibold uppercase tracking-[0.12em] text-smoke mb-3">Pendapatan per Metode</h3>
+                  <div className="space-y-2">
+                    {revenueByPaymentMethod.map((item) => {
+                      const percentage = totalOrderNominal > 0 ? (item.total / totalOrderNominal) * 100 : 0;
+                      return (
+                        <div key={item.name} className="bg-ink/40 rounded p-3 border border-white/5">
+                          <div className="flex justify-between text-sm">
+                            <span className="font-medium text-mist">{item.name}</span>
+                            <span className="font-semibold text-sage">{formatCurrency(item.total)}</span>
+                          </div>
+                          <div className="mt-2 w-full bg-white/5 rounded-full h-1.5 overflow-hidden">
+                            <div className="bg-sage h-1.5 rounded-full" style={{ width: `${percentage}%` }} />
+                          </div>
+                          <span className="text-[10px] text-smoke font-semibold mt-1 block">{percentage.toFixed(1)}% dari total nominal</span>
+                        </div>
+                      );
+                    })}
+                  </div>
+                </div>
+
+                {/* Visualisasi 2: Produk Terlaris */}
+                <div>
+                  <h3 className="text-sm font-semibold uppercase tracking-[0.12em] text-smoke mb-3">5 Produk Terlaris</h3>
+                  <div className="space-y-2">
+                    {topProducts.length === 0 ? (
+                      <p className="text-xs text-smoke">Belum ada data penjualan produk.</p>
+                    ) : (
+                      topProducts.map((item, idx) => (
+                        <div key={item.name} className="bg-ink/40 rounded p-3 border border-white/5 flex items-center justify-between text-sm">
+                          <div className="min-w-0">
+                            <p className="font-medium text-porcelain truncate">
+                              <span className="text-smoke mr-2 font-mono">{idx + 1}.</span>
+                              {item.name}
+                            </p>
+                            <p className="text-xs text-smoke mt-1">{item.qty} pcs terjual</p>
+                          </div>
+                          <span className="font-semibold text-sage shrink-0 ml-3">{formatCurrency(item.total)}</span>
+                        </div>
+                      ))
+                    )}
+                  </div>
+                </div>
               </div>
             )}
           </div>
