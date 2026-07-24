@@ -253,3 +253,53 @@ textarea:focus-visible {
   padding: 1rem;
   color: #ffd7d4;
 }
+
+@media print {
+  body {
+    background: white !important;
+    color: black !important;
+  }
+  
+  body::before {
+    display: none !important;
+  }
+
+  /* Sembunyikan semua kecuali elemen struk */
+  #root > *,
+  .page-shell > *:not(#order-print-invoice),
+  aside > *:not(#order-print-invoice),
+  .fixed > *:not(aside) {
+    display: none !important;
+  }
+
+  /* Reset positioning untuk layout struk */
+  .fixed, aside {
+    position: static !important;
+    inset: auto !important;
+    max-width: 100% !important;
+    width: 100% !important;
+    height: auto !important;
+    background: white !important;
+    color: black !important;
+    border: none !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    box-shadow: none !important;
+    overflow: visible !important;
+  }
+
+  #order-print-invoice {
+    display: block !important;
+    background: white !important;
+    color: black !important;
+    padding: 20px !important;
+    font-family: monospace !important;
+    font-size: 12px !important;
+    line-height: 1.4 !important;
+  }
+
+  #order-print-invoice * {
+    color: black !important;
+  }
+}
+

@@ -878,13 +878,22 @@ export default function AdminOrders() {
                   </h2>
                   <p className="mt-2 text-sm text-smoke">{formatOrderDateTime(selectedOrder.created_at)}</p>
                 </div>
-                <button
-                  type="button"
-                  onClick={() => setSelectedOrderId(null)}
-                  className="rounded-md border border-white/10 bg-white/6 px-3 py-2 text-sm font-semibold text-porcelain hover:bg-white/10"
-                >
-                  Tutup
-                </button>
+                <div className="flex items-center gap-2">
+                  <button
+                    type="button"
+                    onClick={() => window.print()}
+                    className="rounded-md border border-sage/30 bg-sage/10 px-3 py-2 text-sm font-semibold text-sage hover:bg-sage/20"
+                  >
+                    Cetak Struk
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setSelectedOrderId(null)}
+                    className="rounded-md border border-white/10 bg-white/6 px-3 py-2 text-sm font-semibold text-porcelain hover:bg-white/10"
+                  >
+                    Tutup
+                  </button>
+                </div>
               </div>
 
               <div className="mt-4 flex flex-wrap items-center gap-3">
@@ -1087,6 +1096,57 @@ export default function AdminOrders() {
                   </pre>
                 </div>
               )}
+            </div>
+
+            {/* Print Only Invoice/Receipt */}
+            <div id="order-print-invoice" className="hidden">
+              <div style={{ textAlign: 'center', marginBottom: '20px' }}>
+                <h2 style={{ fontSize: '18px', fontWeight: 'bold', margin: '0 0 5px 0' }}>ADZANI STORE</h2>
+                <p style={{ margin: '0 0 5px 0' }}>Struk Pesanan Resmi</p>
+                <p style={{ margin: '0' }}>----------------------------------------</p>
+              </div>
+              <div style={{ marginBottom: '15px' }}>
+                <p style={{ margin: '3px 0' }}>ID Order: #{getShortOrderId(selectedOrder.id)}</p>
+                <p style={{ margin: '3px 0' }}>Tanggal: {formatOrderDateTime(selectedOrder.created_at)}</p>
+                <p style={{ margin: '3px 0' }}>Status: {selectedOrder.status.toUpperCase()}</p>
+                <p style={{ margin: '3px 0' }}>Nama: {getCustomerLabel(selectedOrder)}</p>
+                <p style={{ margin: '3px 0' }}>Telepon: {getCustomerPhoneDisplay(selectedOrder) || '-'}</p>
+                <p style={{ margin: '3px 0' }}>Metode: {selectedOrder.pickup_method || '-'}</p>
+              </div>
+              <div style={{ marginBottom: '15px' }}>
+                <p style={{ margin: '0 0 5px 0' }}>Daftar Produk:</p>
+                <p style={{ margin: '0' }}>----------------------------------------</p>
+                {selectedOrder.items.map((item) => (
+                  <div key={`${selectedOrder.id}-print-${item.product_id}`} style={{ margin: '8px 0' }}>
+                    <p style={{ margin: '0', fontWeight: 'bold' }}>{item.name}</p>
+                    <div style={{ display: 'flex', justifyContent: 'between', fontSize: '11px' }}>
+                      <span>{item.qty} x {formatCurrency(item.price)}</span>
+                      <span style={{ float: 'right' }}>{formatCurrency(item.subtotal)}</span>
+                    </div>
+                  </div>
+                ))}
+                <p style={{ margin: '5px 0 0 0' }}>----------------------------------------</p>
+              </div>
+              <div style={{ display: 'flex', justifyContent: 'between', fontWeight: 'bold', fontSize: '13px', marginBottom: '15px' }}>
+                <span>TOTAL:</span>
+                <span style={{ float: 'right' }}>{formatCurrency(selectedOrder.total)}</span>
+              </div>
+              {selectedOrder.customer_note && (
+                <div style={{ marginBottom: '15px', fontSize: '11px', fontStyle: 'italic' }}>
+                  <p style={{ margin: '0 0 3px 0', fontWeight: 'bold' }}>Catatan Customer:</p>
+                  <p style={{ margin: '0' }}>{selectedOrder.customer_note}</p>
+                </div>
+              )}
+              {selectedOrder.admin_note && (
+                <div style={{ marginBottom: '15px', fontSize: '11px', border: '1px dashed #ccc', padding: '5px' }}>
+                  <p style={{ margin: '0 0 3px 0', fontWeight: 'bold' }}>Catatan Internal Toko:</p>
+                  <p style={{ margin: '0' }}>{selectedOrder.admin_note}</p>
+                </div>
+              )}
+              <div style={{ textAlign: 'center', marginTop: '30px', fontSize: '10px' }}>
+                <p style={{ margin: '0' }}>Terima kasih atas pesanan Anda!</p>
+                <p style={{ margin: '5px 0 0 0' }}>Hubungi admin untuk info lebih lanjut.</p>
+              </div>
             </div>
           </aside>
         </div>
